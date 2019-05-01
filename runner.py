@@ -49,9 +49,3 @@ def prepareOutputDirectory():
         files = glob.glob('out/*')
         for f in files:
             os.remove(f)
-
-output = run("""fun main(args: Array<String>) {
-    println("Hello, World!")
-}""")
-print(output[0])
-print(output[1])
