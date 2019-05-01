@@ -18,6 +18,8 @@ def run(code, compiler="kotlinc") -> (bool, str):
 def runFile(file, compiler):
     if compiler == "kotlinc-jvm" or compiler == "kotlinc":
         file = file + ".jar"
+    elif isWindows():
+        file = file + ".exe"
     else:
         file = file + ".kexe"
 
@@ -47,15 +49,15 @@ def compileFile(inputFile, outputFile, compiler):
 
         return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     elif compiler == "kotlinc-native":
-        outputFile = outputFile + ".kexe"
         if isWindows():
-            outputFile = outputFile.replace("/", "\\")
+            outputFile = outputFile.replace("/", "\\").exe
             inputFile = inputFile.replace("/", "\\")
 
             executionString = "kotlinc-windows\\bin\\{} -o {output} {input}".format(compiler, input=inputFile,
                                                                                     output=outputFile)
             return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
         else:
+            outputFile = outputFile + ".kexe"
             executionString = "kotlinc-linux/bin/{} -o {output} {input}".format(compiler, input=inputFile,
                                                                                 output=outputFile)
             return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
