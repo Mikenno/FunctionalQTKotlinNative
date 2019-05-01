@@ -1,0 +1,12 @@
+#Wed Apr 24 16:28:20 MSK 2019
+unique_name=gles
+depends=stdlib posix glesCommon
+headers=GLES/gl.h GLES/glext.h GLES/glplatform.h
+includedHeaders=usr\\include\\GLES\\gl.h usr\\include\\GLES\\glplatform.h usr\\include\\GLES\\glext.h 9b0eb0d9dcd8f0a1799d404848b1271f8e6a9e6c7253d88bed74a979b76d71c5
+interop=true
+linkerOpts=-lGLESv1_CM
+compiler_version=1.2.1-release-9743
+headerFilter=GLES/**
+abi_version=8
+exportForwardDeclarations=
+package=platform.gles

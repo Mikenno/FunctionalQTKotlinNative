@@ -1,0 +1,11 @@
+#Wed Apr 24 16:24:16 MSK 2019
+unique_name=glesCommon
+depends=stdlib posix
+headers=KHR/khrplatform.h
+includedHeaders=usr/include/KHR/khrplatform.h 0c87d41b4bde081e9ad52aaec27753b431dae4df0fc0636cc3982a1e5a4b29da
+interop=true
+compiler_version=1.2.1-release-9743
+headerFilter=KHR/**
+abi_version=8
+exportForwardDeclarations=
+package=platform.glescommon

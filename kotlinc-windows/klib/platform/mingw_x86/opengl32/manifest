@@ -1,0 +1,13 @@
+#Wed Apr 24 16:57:27 MSK 2019
+unique_name=opengl32
+compilerOpts=-DUNICODE
+depends=stdlib
+headers=GL/gl.h GL/glext.h
+includedHeaders=i686-w64-mingw32\\include\\GL\\gl.h i686-w64-mingw32\\include\\GL\\glext.h c2179d1e6498c3ec7184344eb2b6797594ce4d5cd3906237876413fb623b8731
+interop=true
+linkerOpts=-lopengl32
+compiler_version=1.2.1-release-9743
+headerFilter=GL/gl.h GL/glext.h
+abi_version=8
+exportForwardDeclarations=cnames.structs.__GLsync cnames.structs._cl_context cnames.structs._cl_event
+package=platform.opengl32

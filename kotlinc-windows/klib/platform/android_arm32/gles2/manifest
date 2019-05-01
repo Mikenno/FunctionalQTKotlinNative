@@ -1,0 +1,12 @@
+#Wed Apr 24 16:28:38 MSK 2019
+unique_name=gles2
+depends=stdlib posix glesCommon
+headers=GLES2/gl2.h GLES2/gl2ext.h GLES2/gl2platform.h
+includedHeaders=usr\\include\\GLES2\\gl2.h usr\\include\\GLES2\\gl2platform.h usr\\include\\GLES2\\gl2ext.h 6cfbf8f274bfba7180c6d34ff1a5cdc3abd983a2a22be18876e08283f8f23d55
+interop=true
+linkerOpts=-lGLESv2
+compiler_version=1.2.1-release-9743
+headerFilter=GLES2/**
+abi_version=8
+exportForwardDeclarations=cnames.structs.__GLsync
+package=platform.gles2

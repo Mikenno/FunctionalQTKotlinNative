@@ -1,0 +1,12 @@
+#Wed Apr 24 16:28:56 MSK 2019
+unique_name=gles3
+depends=stdlib posix glesCommon
+headers=GLES3/gl3.h GLES3/gl3ext.h GLES3/gl3platform.h
+includedHeaders=usr\\include\\GLES3\\gl3.h usr\\include\\GLES3\\gl3platform.h usr\\include\\GLES3\\gl3ext.h c6f79e11ff76a802bd1e758afb9372cc716ed55efe4599769156bca93723bf9c
+interop=true
+linkerOpts=-lGLESv3
+compiler_version=1.2.1-release-9743
+headerFilter=GLES3/**
+abi_version=8
+exportForwardDeclarations=cnames.structs.__GLsync
+package=platform.gles3

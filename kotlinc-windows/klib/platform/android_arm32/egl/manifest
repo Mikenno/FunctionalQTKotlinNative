@@ -1,0 +1,12 @@
+#Wed Apr 24 16:28:03 MSK 2019
+unique_name=egl
+depends=stdlib posix glesCommon
+headers=EGL/egl.h EGL/eglext.h EGL/eglplatform.h
+includedHeaders=usr\\include\\EGL\\egl.h usr\\include\\EGL\\eglplatform.h usr\\include\\EGL\\eglext.h df661d89a6da2637b09a1780124ed5d5f82c4e5489faaec21db23035d03c97dc
+interop=true
+linkerOpts=-lEGL
+compiler_version=1.2.1-release-9743
+headerFilter=EGL/**
+abi_version=8
+exportForwardDeclarations=cnames.structs.ANativeWindow cnames.structs.egl_native_pixmap_t
+package=platform.egl

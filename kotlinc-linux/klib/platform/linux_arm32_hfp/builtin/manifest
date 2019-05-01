@@ -1,0 +1,11 @@
+#Wed Apr 24 16:17:59 MSK 2019
+unique_name=builtin
+depends=stdlib
+includedHeaders=builtins 80ae92b82b267f33a18b6040969d0e6f0088a0400d32b4f6db6f96ec6d52aae6
+language=C
+interop=true
+compiler_version=1.2.1-release-9743
+headerFilter=
+abi_version=8
+exportForwardDeclarations=
+package=platform.builtin

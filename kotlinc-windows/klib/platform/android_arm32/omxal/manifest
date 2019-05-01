@@ -1,0 +1,12 @@
+#Wed Apr 24 16:29:51 MSK 2019
+unique_name=omxal
+depends=stdlib
+headers=OMXAL/OpenMAXAL.h OMXAL/OpenMAXAL_Android.h OMXAL/OpenMAXAL_Platform.h
+includedHeaders=usr\\include\\OMXAL\\OpenMAXAL.h usr\\include\\OMXAL\\OpenMAXAL_Platform.h usr\\include\\OMXAL\\OpenMAXAL_Android.h fba42313d316f98aef9ca5e1893c1bc35243b50cc6a8f9edc19635ab95889547
+interop=true
+linkerOpts=-lOpenMAXAL
+compiler_version=1.2.1-release-9743
+headerFilter=OMXAL/**
+abi_version=8
+exportForwardDeclarations=
+package=platform.omxal

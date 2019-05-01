@@ -1,0 +1,13 @@
+#Wed Apr 24 16:56:28 MSK 2019
+unique_name=gdiplus
+compilerOpts=-DUNICODE
+headers=wtypes.h minwindef.h wtypes.h gdiplus/gdiplus.h
+depends=stdlib posix windows
+includedHeaders=i686-w64-mingw32\\include\\gdiplus\\gdiplus.h i686-w64-mingw32\\include\\gdiplus\\gdiplusenums.h i686-w64-mingw32\\include\\gdiplus\\gdiplustypes.h i686-w64-mingw32\\include\\gdiplus\\gdiplusgpstubs.h i686-w64-mingw32\\include\\gdiplus\\gdiplusimaging.h i686-w64-mingw32\\include\\gdiplus\\gdiplusinit.h i686-w64-mingw32\\include\\gdiplus\\gdiplusmem.h i686-w64-mingw32\\include\\gdiplus\\gdiplusmetaheader.h i686-w64-mingw32\\include\\gdiplus\\gdipluspixelformats.h i686-w64-mingw32\\include\\gdiplus\\gdipluscolor.h i686-w64-mingw32\\include\\gdiplus\\gdipluscolormatrix.h i686-w64-mingw32\\include\\gdiplus\\gdiplusflat.h i686-w64-mingw32\\include\\gdiplus\\gdipluseffects.h i686-w64-mingw32\\include\\gdiplus\\gdiplusimagecodec.h 6fa20de2a49b15e3ad967454a1125fe3a0ec7ed4abae415ed08b5f36e850bbf5
+interop=true
+linkerOpts=-lgdiplus
+compiler_version=1.2.1-release-9743
+headerFilter=gdiplus/**
+abi_version=8
+exportForwardDeclarations=cnames.structs.IDirectDrawSurface7 cnames.structs.GdiplusAbort
+package=platform.gdiplus

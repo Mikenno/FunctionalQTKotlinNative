@@ -1,0 +1,10 @@
+#Wed Apr 24 16:31:36 MSK 2019
+unique_name=iconv
+headers=iconv.h
+depends=stdlib posix
+includedHeaders=usr\\include\\iconv.h 29965f8d829c34990849817eb6dfe6322f36a62db77bd384f1730ad7d293c5ae
+interop=true
+compiler_version=1.2.1-release-9743
+abi_version=8
+exportForwardDeclarations=
+package=platform.iconv

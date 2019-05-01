@@ -3,7 +3,7 @@ import os
 import subprocess
 
 TEMPORARY_CODE_FILE_NAME = "out/code.kt"
-TEMPORARY_EXECUTABLE_FILE_NAME = "out/code.jar"
+TEMPORARY_EXECUTABLE_FILE_NAME = "out/code"
 
 
 def run(code, compiler="kotlinc") -> (bool, str):
@@ -16,24 +16,64 @@ def run(code, compiler="kotlinc") -> (bool, str):
 
 
 def runFile(file, compiler):
+    if compiler == "kotlinc-jvm" or compiler == "kotlinc":
+        file = file + ".jar"
+    else:
+        file = file + ".kexe"
+
     if os.path.exists(file):
-        executionString = "java -jar " + file
+        if compiler == "kotlinc-jvm" or compiler == "kotlinc":
+            executionString = "java -jar " + file
+        else:
+            if isWindows():
+                executionString = "./" + file
+            else:
+                executionString = "./" + file
         return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     return None
 
 
+def isWindows():
+    return os.name == "nt"
+
+
 def compileFile(inputFile, outputFile, compiler):
-    executionString = "kotlinc/bin/{} {} -include-runtime -d {}".format(compiler, inputFile, outputFile)
+    if compiler == "kotlinc-jvm" or compiler == "kotlinc":
+        outputFile = outputFile + ".jar"
+        executionString = "kotlinc/bin/{} {} -include-runtime -d {}".format(compiler, inputFile, outputFile)
 
-    if os.name == 'nt':
-        executionString = executionString.replace("/", "\\")
+        if os.name == 'nt':
+            executionString = executionString.replace("/", "\\")
 
-    return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+        return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+    elif compiler == "kotlinc-native":
+        outputFile = outputFile + ".kexe"
+        if isWindows():
+            outputFile = outputFile.replace("/", "\\")
+            inputFile = inputFile.replace("/", "\\")
+
+            executionString = "kotlinc-windows\\bin\\{} -o {output} {input}".format(compiler, input=inputFile,
+                                                                                    output=outputFile)
+            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+        else:
+            executionString = "kotlinc-linux/bin/{} -o {output} {input}".format(compiler, input=inputFile,
+                                                                                output=outputFile)
+            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
 
 
 def checkPrerequisites(code, compiler):
-    if not os.path.exists("kotlinc/bin/" + compiler):
-        raise Exception("ERROR: Please include standalone kotlin compiler in kotlinc folder, aborting")
+    if compiler == "kotlinc-native":
+        if os.name == "nt":
+            if not os.path.exists("kotlinc-windows/bin/" + compiler):
+                raise Exception(
+                    "ERROR: Please include standalone native kotlin compiler in kotlinc-windows folder, aborting")
+        else:
+            if not os.path.exists("kotlinc-linux/bin/" + compiler):
+                raise Exception(
+                    "ERROR: Please include standalone native kotlin compiler in kotlinc-linux folder, aborting")
+    else:
+        if not os.path.exists("kotlinc/bin/" + compiler):
+            raise Exception("ERROR: Please include standalone kotlin compiler in kotlinc folder, aborting")
     if code == "":
         print("Warning: Code is blank")
 

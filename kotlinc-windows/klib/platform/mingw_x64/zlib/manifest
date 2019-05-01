@@ -1,0 +1,13 @@
+#Wed Apr 24 16:47:15 MSK 2019
+unique_name=zlib
+compilerOpts=-DByte\=uByte -DBytef\=uBytef
+headers=zconf.h zlib.h
+depends=stdlib posix
+includedHeaders=include\\zlib.h f5cd361814899ccacd6f8851ab01dfc139b73a9fd6deda9f02729f471e5977ed
+interop=true
+linkerOpts=-Wl,-Bstatic -lz -Wl,-Bdynamic
+compiler_version=1.2.1-release-9743
+headerFilter=zlib.h
+abi_version=8
+exportForwardDeclarations=cnames.structs.internal_state
+package=platform.zlib
