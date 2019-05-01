@@ -5,16 +5,19 @@ import subprocess
 TEMPORARY_CODE_FILE_NAME = "out/code.kt"
 TEMPORARY_EXECUTABLE_FILE_NAME = "out/code.jar"
 
+'''
+
+'''
 def run(code, compiler="kotlinc") -> (bool, str):
     prepareOutputDirectory()
     checkPrerequisites(code, compiler)
     writeCodeFile(code, TEMPORARY_CODE_FILE_NAME)
     compilerOutput = compileFile(TEMPORARY_CODE_FILE_NAME, TEMPORARY_EXECUTABLE_FILE_NAME, compiler)
-    runOutput = runFile(TEMPORARY_EXECUTABLE_FILE_NAME)
+    runOutput = runFile(TEMPORARY_EXECUTABLE_FILE_NAME, compiler)
     return (compilerOutput, runOutput)
 
 
-def runFile(file):
+def runFile(file, compiler):
     if os.path.exists(file):
         return subprocess.run(['java', '-jar', file], stdout=subprocess.PIPE).stdout.decode('utf-8')
     return None
@@ -24,7 +27,7 @@ def compileFile(inputFile, outputFile, compiler):
     executionString = "kotlinc/bin/{} {} -include-runtime -d {}".format(compiler,inputFile, outputFile)
 
     if os.name == 'nt':
-        executionString.replace("/", "\\")
+        executionString = executionString.replace("/", "\\")
 
     return subprocess.run(executionString.split(" "), stdout=subprocess.PIPE).stdout.decode('utf-8')
 
