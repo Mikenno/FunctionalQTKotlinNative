@@ -10,7 +10,10 @@ f = open("test.kt", "w")
 f.write(code)
 f.close()
 
-os.system("kotlinc/bin/kotlinc test.kt -include-runtime -d test.jar")
+if os.name == 'nt':
+    os.system("kotlinc\\bin\\kotlinc test.kt -include-runtime -d test.jar")
+else:
+    os.system("kotlinc/bin/kotlinc test.kt -include-runtime -d test.jar")
 output = os.system("java -jar test.jar")
 
 print(output)
