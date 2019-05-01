@@ -5,7 +5,7 @@ import subprocess
 
 
 
-def run(code, compiler="kotlinc", codeFileName = "out/code.kt", exeFileName = "out/code") -> (bool, str):
+def run(code, compiler="kotlinc", outputDirectory="out", codeFileName = "code.kt", exeFileName = None) -> (bool, str):
     """
     Compiles the specified code and runs it.
     Returns a tuple containing the compiler output and the run output, in that order.
@@ -19,11 +19,19 @@ def run(code, compiler="kotlinc", codeFileName = "out/code.kt", exeFileName = "o
 
     :param code: the code to compile
     :param compiler: the compiler to use, defaults to kotlinc
-    :param codeFileName: the location to save the code file in
-    :param exeFileName: the location to save the exe file in
+    :param codeFileName: the name to save the code file in
+    :param exeFileName: the name to save the exe file in
+    :param outputDirectory: the working directory
     :return: a tuple containing the output (compiler, program)
     """
-    prepareOutputDirectory()
+    if exeFileName == None:
+        exeFileName = codeFileName.split(".")[0]
+
+    prepareOutputDirectory(outputDirectory)
+
+    codeFileName = outputDirectory + "/" + codeFileName
+    exeFileName = outputDirectory + "/" + exeFileName
+
     checkPrerequisites(code, compiler)
     writeCodeFile(code, codeFileName)
     compilerOutput = compileFile(codeFileName, exeFileName, compiler)
@@ -102,10 +110,10 @@ def writeCodeFile(code, outputFile):
     f.close()
 
 
-def prepareOutputDirectory():
-    if not os.path.isdir("out"):
-        os.mkdir("out")
+def prepareOutputDirectory(directory):
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
     else:
-        files = glob.glob('out/*')
+        files = glob.glob(directory + '/*')
         for f in files:
             os.remove(f)
