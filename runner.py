@@ -17,7 +17,8 @@ def run(code, compiler="kotlinc") -> (bool, str):
 
 def runFile(file, compiler):
     if os.path.exists(file):
-        return subprocess.run(['java', '-jar', file], stdout=subprocess.PIPE).stdout.decode('utf-8')
+        executionString = "java -jar " + file
+        return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     return None
 
 
@@ -27,7 +28,7 @@ def compileFile(inputFile, outputFile, compiler):
     if os.name == 'nt':
         executionString = executionString.replace("/", "\\")
 
-    return subprocess.run(executionString.split(" "), stdout=subprocess.PIPE).stdout.decode('utf-8')
+    return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
 
 
 def checkPrerequisites(code, compiler):
