@@ -28,7 +28,7 @@ def runFile(file, compiler):
             executionString = "java -jar " + file
         else:
             if isWindows():
-                executionString = file
+                executionString = file.replace("/", "\\")
             else:
                 executionString = "./" + file
         return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
