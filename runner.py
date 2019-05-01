@@ -5,8 +5,22 @@ import subprocess
 TEMPORARY_CODE_FILE_NAME = "out/code.kt"
 TEMPORARY_EXECUTABLE_FILE_NAME = "out/code"
 
-
 def run(code, compiler="kotlinc") -> (bool, str):
+    """
+    Compiles the specified code and runs it.
+    Returns a tuple containing the compiler output and the run output, in that order.
+
+    Can use alternate compilers by specifying compiler=?
+
+    Compilers available:
+     - kotlinc
+     - kotlinc-jvm
+     - kotlinc-native (on windows and Linux)
+
+    :param code: the code to compile
+    :param compiler: the compiler to use, defaults to kotlinc
+    :return: a tuple containing the output (compiler, program)
+    """
     prepareOutputDirectory()
     checkPrerequisites(code, compiler)
     writeCodeFile(code, TEMPORARY_CODE_FILE_NAME)
