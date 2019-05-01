@@ -1,19 +1,16 @@
-import os
-
+import runner
+from hypothesis import settings, given
+from hypothesis.strategies import just
 code = """fun main(args: Array<String>) {
     println("Hello, World!")
 }
 """
 
+@given(just(code))
+@settings(deadline=None)
+def compilertest(s):
+    output1 = runner.run(s, "kotlinc-jvm")
+    output2 = runner.run(s, "kotlinc")
+    assert output1 == output2
 
-f = open("test.kt", "w")
-f.write(code)
-f.close()
-
-if os.name == 'nt':
-    os.system("kotlinc\\bin\\kotlinc test.kt -include-runtime -d test.jar")
-else:
-    os.system("kotlinc/bin/kotlinc test.kt -include-runtime -d test.jar")
-output = os.system("java -jar test.jar")
-
-print(output)
+compilertest()
