@@ -50,7 +50,7 @@ def compileFile(inputFile, outputFile, compiler):
         return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     elif compiler == "kotlinc-native":
         if isWindows():
-            outputFile = outputFile.replace("/", "\\").exe
+            outputFile = outputFile.replace("/", "\\") + ".exe"
             inputFile = inputFile.replace("/", "\\")
 
             executionString = "kotlinc-windows\\bin\\{} -o {output} {input}".format(compiler, input=inputFile,
