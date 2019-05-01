@@ -5,9 +5,7 @@ import subprocess
 TEMPORARY_CODE_FILE_NAME = "out/code.kt"
 TEMPORARY_EXECUTABLE_FILE_NAME = "out/code.jar"
 
-'''
 
-'''
 def run(code, compiler="kotlinc") -> (bool, str):
     prepareOutputDirectory()
     checkPrerequisites(code, compiler)
@@ -24,7 +22,7 @@ def runFile(file, compiler):
 
 
 def compileFile(inputFile, outputFile, compiler):
-    executionString = "kotlinc/bin/{} {} -include-runtime -d {}".format(compiler,inputFile, outputFile)
+    executionString = "kotlinc/bin/{} {} -include-runtime -d {}".format(compiler, inputFile, outputFile)
 
     if os.name == 'nt':
         executionString = executionString.replace("/", "\\")
