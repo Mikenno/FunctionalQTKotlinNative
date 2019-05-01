@@ -2,10 +2,10 @@ import glob
 import os
 import subprocess
 
-TEMPORARY_CODE_FILE_NAME = "out/code.kt"
-TEMPORARY_EXECUTABLE_FILE_NAME = "out/code"
 
-def run(code, compiler="kotlinc") -> (bool, str):
+
+
+def run(code, compiler="kotlinc", codeFileName = "out/code.kt", exeFileName = "out/code") -> (bool, str):
     """
     Compiles the specified code and runs it.
     Returns a tuple containing the compiler output and the run output, in that order.
@@ -19,13 +19,15 @@ def run(code, compiler="kotlinc") -> (bool, str):
 
     :param code: the code to compile
     :param compiler: the compiler to use, defaults to kotlinc
+    :param codeFileName: the location to save the code file in
+    :param exeFileName: the location to save the exe file in
     :return: a tuple containing the output (compiler, program)
     """
     prepareOutputDirectory()
     checkPrerequisites(code, compiler)
-    writeCodeFile(code, TEMPORARY_CODE_FILE_NAME)
-    compilerOutput = compileFile(TEMPORARY_CODE_FILE_NAME, TEMPORARY_EXECUTABLE_FILE_NAME, compiler)
-    runOutput = runFile(TEMPORARY_EXECUTABLE_FILE_NAME, compiler)
+    writeCodeFile(code, codeFileName)
+    compilerOutput = compileFile(codeFileName, exeFileName, compiler)
+    runOutput = runFile(exeFileName, compiler)
     return (compilerOutput, runOutput)
 
 
