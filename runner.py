@@ -28,7 +28,7 @@ def runFile(file, compiler):
             executionString = "java -jar " + file
         else:
             if isWindows():
-                executionString = "./" + file
+                executionString = file
             else:
                 executionString = "./" + file
         return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
@@ -50,7 +50,7 @@ def compileFile(inputFile, outputFile, compiler):
         return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     elif compiler == "kotlinc-native":
         if isWindows():
-            outputFile = outputFile.replace("/", "\\") + ".exe"
+            outputFile = outputFile.replace("/", "\\")
             inputFile = inputFile.replace("/", "\\")
 
             executionString = "kotlinc-windows\\bin\\{} -o {output} {input}".format(compiler, input=inputFile,
