@@ -2,9 +2,6 @@ import glob
 import os
 import subprocess
 
-
-
-
 def run(code, compiler="kotlinc", outputDirectory="out", codeFileName = "code.kt", exeFileName = None) -> (bool, str):
     """
     Compiles the specified code and runs it.
@@ -16,6 +13,7 @@ def run(code, compiler="kotlinc", outputDirectory="out", codeFileName = "code.kt
      - kotlinc
      - kotlinc-jvm
      - kotlinc-native (on windows and Linux)
+     - kotlinc-experimental (on windows and Linux)
 
     :param code: the code to compile
     :param compiler: the compiler to use, defaults to kotlinc
@@ -85,6 +83,19 @@ def compileFile(inputFile, outputFile, compiler):
             executionString = "kotlinc-linux/bin/{} -o {output} {input}".format(compiler, input=inputFile,
                                                                                 output=outputFile)
             return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+    elif compiler == "kotlinc-experimental":
+        if isWindows():
+            outputFile = outputFile.replace("/", "\\")
+            inputFile = inputFile.replace("/", "\\")
+
+            executionString = "kotlinc-experimental-windows\\bin\\kotlinc -o {output} {input}".format(input=inputFile,
+                                                                                    output=outputFile)
+            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+        else:
+            outputFile = outputFile + ".kexe"
+            executionString = "kotlinc-experimental-linux/bin/kotlinc -o {output} {input}".format(input=inputFile,
+                                                                                output=outputFile)
+            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
 
 
 def checkPrerequisites(code, compiler):
@@ -97,6 +108,15 @@ def checkPrerequisites(code, compiler):
             if not os.path.exists("kotlinc-linux/bin/" + compiler):
                 raise Exception(
                     "ERROR: Please include standalone native kotlin compiler in kotlinc-linux folder, aborting")
+    elif compiler == "kotlinc-experimental":
+        if os.name == "nt":
+            if not os.path.exists("kotlinc-experimental-windows/bin/kotlinc"):
+                raise Exception(
+                    "ERROR: Please include standalone experimental native kotlin compiler in kotlinc-experimental-windows folder, aborting")
+        else:
+            if not os.path.exists("kotlinc-experimental-linux/bin/kotlinc"):
+                raise Exception(
+                    "ERROR: Please include standalone experimental native kotlin compiler in kotlinc-experimental-linux folder, aborting")
     else:
         if not os.path.exists("kotlinc/bin/" + compiler):
             raise Exception("ERROR: Please include standalone kotlin compiler in kotlinc folder, aborting")
