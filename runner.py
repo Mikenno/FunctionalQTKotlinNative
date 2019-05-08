@@ -127,6 +127,7 @@ def checkPrerequisites(code, compiler):
 def writeCodeFile(code, outputFile):
     f = open(outputFile, "w")
     f.write(code)
+    f.flush()
     f.close()
 
 
