@@ -10,6 +10,7 @@ import time
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
 
 numbers = integers()
+depth = 1
 
 @composite
 def projects(draw):
@@ -46,7 +47,7 @@ def genVariable(draw, list):
         if name not in list:
             newName = False
             list.append(name)
-    return ('\tvar ' + name + ' = ' + str(draw(numbers)) + ';\n'), list
+    return (depth*"\t" + 'var ' + name + ' = ' + str(draw(numbers)) + ';\n'), list
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
@@ -56,10 +57,8 @@ def randomString(stringLength=10):
 @composite
 def projectsv2(draw):
     gen = genCode(draw)
-    code = """
-fun main(args: Array<String>) {
-input
-}
+    code = """fun main(args: Array<String>) {
+input}
     """
     return code.replace("input", gen)
 
