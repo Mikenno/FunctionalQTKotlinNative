@@ -46,7 +46,7 @@ def genVariable(draw, list):
         if name not in list:
             newName = False
             list.append(name)
-    return ('var ' + name + ' = ' + str(draw(numbers)) + ';\n\r'), list
+    return ('\tvar ' + name + ' = ' + str(draw(numbers)) + ';\n'), list
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
@@ -57,9 +57,9 @@ def randomString(stringLength=10):
 def projectsv2(draw):
     gen = genCode(draw)
     code = """
-    fun main(args: Array<String>) {
-        input
-    }
+fun main(args: Array<String>) {
+input
+}
     """
     return code.replace("input", gen)
 
