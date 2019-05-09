@@ -1,15 +1,15 @@
 import runner
 from datetime import datetime
 from hypothesis import settings, given, HealthCheck
-from hypothesis.strategies import just, text, characters, composite, integers
+from hypothesis.strategies import just, text, characters, composite, integers, random_module
 import random
 import string
 import time
 
 
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
-
 numbers = integers()
+
 depth = 1
 
 @composite
@@ -25,29 +25,39 @@ def projects(draw):
 def genCode(draw):
     fuel = 25
     string_code = ""
-    list = []
+    variables = []
     while(fuel > 0):
-        temps, templist = genExp(draw, list)
-        list = templist
-        string_code += temps
+        newCode, newVariableList = genExp(draw, variables)
+        variables = newVariableList
+        string_code += newCode
         fuel -= 1
     return string_code
 
-def genExp(draw, list):
-    r = random.randint(1, 6)
-    if True:
-        s, vn = genVariable(draw, list)
-        return s, vn
+def genExp(draw, variables):
+    r = random.randint(1, 2)
+    if r == 1:
+        generatedCode, variableList = genVariable(draw, variables)
+        return generatedCode, variableList
+    elif r == 2:
+        return genVariableChange(draw, variables)
 
-def genVariable(draw, list):
+def genVariableChange(draw, variables):
+    if len(variables) == 0:
+        return genVariable(draw, variables)
+
+    index = random.randint(0, len(variables))
+    variableName = variables[index-1]
+    return (depth*"\t" + variableName + "+=" + str(draw(numbers)) + ";\n"), variables
+
+def genVariable(draw, variables):
     newName = True
     name = ""
     while newName:
         name = draw(names)
-        if name not in list:
+        if name not in variables:
             newName = False
-            list.append(name)
-    return (depth*"\t" + 'var ' + name + ' = ' + str(draw(numbers)) + ';\n'), list
+            variables.append(name)
+    return (depth*"\t" + 'var ' + name + ' = ' + str(draw(numbers)) + ';\n'), variables
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
