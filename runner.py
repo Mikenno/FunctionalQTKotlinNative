@@ -2,7 +2,8 @@ import glob
 import os
 import subprocess
 
-def run(code, compiler="kotlinc", outputDirectory="out", codeFileName = "code.kt", exeFileName = None) -> (bool, str):
+
+def run(code, compiler="kotlinc", outputDirectory="out", codeFileName="code.kt", exeFileName=None) -> (bool, str):
     """
     Compiles the specified code and runs it.
     Returns a tuple containing the compiler output and the run output, in that order.
@@ -34,7 +35,7 @@ def run(code, compiler="kotlinc", outputDirectory="out", codeFileName = "code.kt
     writeCodeFile(code, codeFileName)
     compilerOutput = compileFile(codeFileName, exeFileName, compiler)
     runOutput = runFile(exeFileName, compiler)
-    return (compilerOutput, runOutput)
+    return compilerOutput, runOutput
 
 
 def runFile(file, compiler):
@@ -53,7 +54,8 @@ def runFile(file, compiler):
                 executionString = file.replace("/", "\\")
             else:
                 executionString = "./" + file
-        return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+        return subprocess.run(executionString, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              shell=True).stdout.decode('utf-8')
     return None
 
 
@@ -69,7 +71,6 @@ def compileFile(inputFile, outputFile, compiler):
         if os.name == 'nt':
             executionString = executionString.replace("/", "\\")
 
-        return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     elif compiler == "kotlinc-native":
         if isWindows():
             outputFile = outputFile.replace("/", "\\")
@@ -77,25 +78,23 @@ def compileFile(inputFile, outputFile, compiler):
 
             executionString = "kotlinc-windows\\bin\\{} -o {output} {input}".format(compiler, input=inputFile,
                                                                                     output=outputFile)
-            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
         else:
             outputFile = outputFile + ".kexe"
             executionString = "kotlinc-linux/bin/{} -o {output} {input}".format(compiler, input=inputFile,
                                                                                 output=outputFile)
-            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
     elif compiler == "kotlinc-experimental":
         if isWindows():
             outputFile = outputFile.replace("/", "\\")
             inputFile = inputFile.replace("/", "\\")
 
             executionString = "kotlinc-experimental-windows\\bin\\kotlinc -o {output} {input}".format(input=inputFile,
-                                                                                    output=outputFile)
-            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+                                                                                                      output=outputFile)
         else:
             outputFile = outputFile + ".kexe"
             executionString = "kotlinc-experimental-linux/bin/kotlinc -o {output} {input}".format(input=inputFile,
-                                                                                output=outputFile)
-            return subprocess.run(executionString, stdout=subprocess.PIPE, shell=True).stdout.decode('utf-8')
+                                                                                                  output=outputFile)
+    return subprocess.run(executionString, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode(
+        'utf-8')
 
 
 def checkPrerequisites(code, compiler):
