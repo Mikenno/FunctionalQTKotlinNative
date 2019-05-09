@@ -126,6 +126,5 @@ def compilertest(s):
     output1 = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     output2 = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
     assert str(output1) == nativeRemover(str(output2))
-    #time.sleep(1)
 
 compilertest()
