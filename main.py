@@ -46,7 +46,7 @@ def genVariable(draw, list):
         if name not in list:
             newName = False
             list.append(name)
-    return ('var ' + name + ' = ' + str(draw(numbers)) + ';\n\t'), list
+    return ('var ' + name + ' = ' + str(draw(numbers)) + ';\n\r'), list
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
