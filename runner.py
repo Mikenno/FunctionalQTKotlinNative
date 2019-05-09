@@ -54,7 +54,7 @@ def runFile(file, compiler):
                 executionString = file.replace("/", "\\")
             else:
                 executionString = "./" + file
-        return subprocess.run(executionString, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        return subprocess.run(executionString, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               shell=True).stdout.decode('utf-8')
     return None
 
@@ -93,8 +93,12 @@ def compileFile(inputFile, outputFile, compiler):
             outputFile = outputFile + ".kexe"
             executionString = "kotlinc-experimental-linux/bin/kotlinc -o {output} {input}".format(input=inputFile,
                                                                                                   output=outputFile)
-    return subprocess.run(executionString, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True).stdout.decode(
+    try:
+        proc = subprocess.run(executionString.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False).stdout.decode(
         'utf-8')
+    except subprocess.CalledProcessError as e:
+        pass
+    return proc
 
 
 def checkPrerequisites(code, compiler):

@@ -112,21 +112,20 @@ input}
 
 
 def nativeRemover(inputString):
+    inputString = inputString.replace("inline", "")
+    inputString = inputString.replace("@TypedIntrinsic ", "")
     return inputString.replace("-native", "")
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=20)
+@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=20)
 def compilertest(s):
     dt = datetime.now()
     name = "out/folder" + (str(dt.microsecond))
     print("run " + str(dt.microsecond))
     output1 = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     output2 = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
-    print(output1)
-    print(output2)
-    assert output1 == output2
-    time.sleep(1)
-
+    assert str(output1) == nativeRemover(str(output2))
+    #time.sleep(1)
 
 compilertest()
