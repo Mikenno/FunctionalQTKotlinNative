@@ -2,7 +2,7 @@ from hypothesis._strategies import randoms, sampled_from, one_of, recursive, bui
 
 import runner
 from datetime import datetime
-from hypothesis import settings, given, HealthCheck
+from hypothesis import settings, given, HealthCheck, assume
 from hypothesis.strategies import just, text, characters, composite, integers, random_module
 import math
 import random
@@ -56,8 +56,7 @@ variableOperators = sampled_from(["+", "-", "*", "/", "%"])
 
 @composite
 def chooseVariable(draw, variables):
-    if len(variables) == 0:
-        return draw(genVariable(variables))
+    assume(len(variables)!= 0)
     return draw(sampled_from(variables))
 
 
@@ -71,15 +70,12 @@ def buildValueParenthesis(draw, variables):
 
 @composite
 def genValue(draw, variables):
-    r = random.randint(1, 8)
-    if r < 4 or len(variables) == 0:
-        return str(draw(numbers))
-    elif r < 6:
-        return str(draw(buildValue(variables)))
-    elif r < 7:
-        return str(draw(buildValueParenthesis(variables)))
-    else:
-        return str(draw(chooseVariable(variables)))
+    return str(draw(one_of(
+        numbers,
+        buildValue(variables),
+        buildValueParenthesis(variables),
+        chooseVariable(variables)
+    )))
 
 
 @composite
