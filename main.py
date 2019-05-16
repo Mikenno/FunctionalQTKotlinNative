@@ -1,4 +1,4 @@
-from hypothesis._strategies import randoms, sampled_from, one_of, recursive
+from hypothesis._strategies import randoms, sampled_from, one_of, recursive, builds
 
 import runner
 from datetime import datetime
@@ -15,7 +15,7 @@ from hypothesis.strategies import text, characters, composite, integers
 import runner
 
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
-numbers = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63)-1))
+numbers = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
 
 depth = 1
 
@@ -35,20 +35,19 @@ def genCode(draw):
     string_code = ""
     variables = []
     while (fuel > 0):
-        newCode, newVariableList = genExp(draw, variables)
+        newCode, newVariableList = draw(draw(genExp(variables)))
         variables = newVariableList
         string_code += newCode
         fuel -= 1
     return string_code
 
 
+@composite
 def genExp(draw, variables):
-    r = random.randint(1, 2)
-    if r == 1:
-        generatedCode, variableList = genVariable(draw, variables)
-        return generatedCode, variableList
-    elif r == 2:
-        return genVariableChange(draw, variables)
+    return one_of(
+        genVariable(variables),
+        genVariableChange(variables)
+    )
 
 
 variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*=", "/="])
@@ -56,12 +55,23 @@ variableOperators = sampled_from(["+", "-", "*", "/", "%"])
 
 
 @composite
+def chooseVariable(draw, variables):
+    if len(variables) == 0:
+        return draw(genVariable(variables))
+    return sampled_from(variables)
+
+
+@composite
+def buildValue(draw, variables):
+    return draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables))
+
+@composite
 def genValue(draw, variables):
     r = random.randint(1, 8)
     if r < 4 or len(variables) == 0:
         return str(draw(numbers))
     elif r < 6:
-        return draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables))
+        return draw(buildValue(variables))
     elif r < 7:
         return "(" + draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables)) + ")"
     else:
@@ -69,9 +79,10 @@ def genValue(draw, variables):
         return variables[r]
 
 
+@composite
 def genVariableChange(draw, variables):
     if len(variables) == 0:
-        return genVariable(draw, variables)
+        return draw(genVariable(variables))
 
     index = random.randint(0, len(variables) - 1)
     variableName = variables[index]
@@ -79,6 +90,7 @@ def genVariableChange(draw, variables):
         draw(genValue(variables))) + ";\n"), variables
 
 
+@composite
 def genVariable(draw, variables):
     newName = True
     value = draw(genValue(variables))
@@ -89,6 +101,7 @@ def genVariable(draw, variables):
             newName = False
             variables.append(name)
     return (depth * "\t" + 'var ' + name + ' = ' + str(value) + ';\n'), variables
+
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
@@ -112,7 +125,7 @@ def nativeRemover(inputString):
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=20)
+@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=5)
 def test_compilertest(s):
     dt = datetime.now()
     name = "out/folder" + (str(dt.microsecond))
