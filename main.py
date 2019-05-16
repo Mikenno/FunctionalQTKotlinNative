@@ -4,12 +4,18 @@ import runner
 from datetime import datetime
 from hypothesis import settings, given, HealthCheck
 from hypothesis.strategies import just, text, characters, composite, integers, random_module
+import math
 import random
 import string
-import time
+from datetime import datetime
+
+from hypothesis import settings, given, HealthCheck
+from hypothesis.strategies import text, characters, composite, integers
+
+import runner
 
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
-numbers = integers()
+numbers = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63)-1))
 
 depth = 1
 
@@ -75,14 +81,14 @@ def genVariableChange(draw, variables):
 
 def genVariable(draw, variables):
     newName = True
+    value = draw(genValue(variables))
     name = ""
     while newName:
         name = draw(names)
         if name not in variables:
             newName = False
             variables.append(name)
-    return (depth * "\t" + 'var ' + name + ' = ' + str(draw(numbers)) + ';\n'), variables
-
+    return (depth * "\t" + 'var ' + name + ' = ' + str(value) + ';\n'), variables
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
