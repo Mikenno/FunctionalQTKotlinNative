@@ -94,7 +94,7 @@ def compileFile(inputFile, outputFile, compiler):
             executionString = "kotlinc-experimental-linux/bin/kotlinc -o {output} {input}".format(input=inputFile,
                                                                                                   output=outputFile)
     try:
-        proc = subprocess.run(executionString.split(" "), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False).stdout.decode(
+        proc = subprocess.run(executionString, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True).stdout.decode(
         'utf-8')
     except subprocess.CalledProcessError as e:
         pass
