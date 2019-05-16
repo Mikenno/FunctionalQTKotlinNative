@@ -56,7 +56,7 @@ variableOperators = sampled_from(["+", "-", "*", "/", "%"])
 
 @composite
 def chooseVariable(draw, variables):
-    assume(len(variables)!= 0)
+    assume(len(variables) != 0)
     return draw(sampled_from(variables))
 
 
@@ -64,9 +64,11 @@ def chooseVariable(draw, variables):
 def buildValue(draw, variables):
     return draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables))
 
+
 @composite
 def buildValueParenthesis(draw, variables):
     return "(" + draw(buildValue(variables)) + ")"
+
 
 @composite
 def genValue(draw, variables):
