@@ -1,10 +1,9 @@
 import runner
 from datetime import datetime
 from hypothesis import settings, given, HealthCheck
-from hypothesis.strategies import just, text, characters, composite, integers, random_module
+from hypothesis.strategies import text, characters, composite, integers, random_module
 import random
 import string
-import time
 
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
 numbers = integers()
@@ -94,14 +93,14 @@ def genVariableChange(draw, variables):
 
 def genVariable(draw, variables):
     newName = True
+    value = genValue(draw, variables)
     name = ""
     while newName:
         name = draw(names)
         if name not in variables:
             newName = False
             variables.append(name)
-    return (depth * "\t" + 'var ' + name + ' = ' + str(draw(numbers)) + ';\n'), variables
-
+    return (depth * "\t" + 'var ' + name + ' = ' + str(value) + ';\n'), variables
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
