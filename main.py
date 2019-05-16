@@ -2,7 +2,7 @@ from hypothesis._strategies import randoms, sampled_from, one_of, recursive, bui
 
 import runner
 from datetime import datetime
-from hypothesis import settings, given, HealthCheck, assume
+from hypothesis import settings, given, HealthCheck, assume, Verbosity
 from hypothesis.strategies import just, text, characters, composite, integers, random_module
 import math
 import random
@@ -85,8 +85,7 @@ def genVariableChange(draw, variables):
     if len(variables) == 0:
         return draw(genVariable(variables))
 
-    index = random.randint(0, len(variables) - 1)
-    variableName = variables[index]
+    variableName = draw(chooseVariable)
     return (depth * "\t" + variableName + draw(variableAssignmentOperators) + str(
         draw(genValue(variables))) + ";\n"), variables
 
@@ -102,13 +101,6 @@ def genVariable(draw, variables):
             newName = False
             variables.append(name)
     return (depth * "\t" + 'var ' + name + ' = ' + str(value) + ';\n'), variables
-
-
-def randomString(stringLength=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
-
 
 @composite
 def projectsv2(draw):
@@ -126,7 +118,7 @@ def nativeRemover(inputString):
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=5)
+@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=5, verbosity=Verbosity.debug)
 def test_compilertest(s):
     dt = datetime.now()
     name = "out/folder" + (str(dt.microsecond))
