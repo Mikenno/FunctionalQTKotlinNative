@@ -1,12 +1,15 @@
-import runner
-from datetime import datetime
-from hypothesis import settings, given, HealthCheck
-from hypothesis.strategies import text, characters, composite, integers, random_module
+import math
 import random
 import string
+from datetime import datetime
+
+from hypothesis import settings, given, HealthCheck
+from hypothesis.strategies import text, characters, composite, integers
+
+import runner
 
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
-numbers = integers()
+numbers = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63)-1))
 
 depth = 1
 
