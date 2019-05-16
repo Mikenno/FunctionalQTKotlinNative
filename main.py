@@ -58,7 +58,7 @@ variableOperators = sampled_from(["+", "-", "*", "/", "%"])
 def chooseVariable(draw, variables):
     if len(variables) == 0:
         return draw(genVariable(variables))
-    return sampled_from(variables)
+    return draw(sampled_from(variables))
 
 
 @composite
@@ -66,17 +66,20 @@ def buildValue(draw, variables):
     return draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables))
 
 @composite
+def buildValueParenthesis(draw, variables):
+    return "(" + draw(buildValue(variables)) + ")"
+
+@composite
 def genValue(draw, variables):
     r = random.randint(1, 8)
     if r < 4 or len(variables) == 0:
         return str(draw(numbers))
     elif r < 6:
-        return draw(buildValue(variables))
+        return str(draw(buildValue(variables)))
     elif r < 7:
-        return "(" + draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables)) + ")"
+        return str(draw(buildValueParenthesis(variables)))
     else:
-        r = random.randint(0, len(variables) - 1)
-        return variables[r]
+        return str(draw(chooseVariable(variables)))
 
 
 @composite
