@@ -1,3 +1,5 @@
+from hypothesis._strategies import randoms, sampled_from, one_of, recursive
+
 import runner
 from datetime import datetime
 from hypothesis import settings, given, HealthCheck
@@ -43,41 +45,19 @@ def genExp(draw, variables):
         return genVariableChange(draw, variables)
 
 
-def genVariableAssignmentOperator():
-    r = random.randint(1, 5)
-    if r == 1:
-        return "="
-    elif r == 2:
-        return "+="
-    elif r == 3:
-        return "-="
-    elif r == 4:
-        return "/="
-    elif r == 5:
-        return "*="
-
-def genVariableOperator():
-    r = random.randint(1, 5)
-    if r == 1:
-        return "+"
-    elif r == 2:
-        return "-"
-    elif r == 3:
-        return "*"
-    elif r == 4:
-        return "/"
-    elif r == 5:
-        return "%"
+variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*=", "/="])
+variableOperators = sampled_from(["+", "-", "*", "/", "%"])
 
 
+@composite
 def genValue(draw, variables):
     r = random.randint(1, 8)
     if r < 4 or len(variables) == 0:
-        return draw(numbers)
+        return str(draw(numbers))
     elif r < 6:
-        return str(genValue(draw, variables)) + " " + genVariableOperator() + " " + str(genValue(draw, variables))
+        return draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables))
     elif r < 7:
-        return "(" + str(genValue(draw, variables)) + " " + genVariableOperator() + " " + str(genValue(draw, variables)) + ")"
+        return "(" + draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables)) + ")"
     else:
         r = random.randint(0, len(variables) - 1)
         return variables[r]
@@ -89,7 +69,8 @@ def genVariableChange(draw, variables):
 
     index = random.randint(0, len(variables) - 1)
     variableName = variables[index]
-    return (depth * "\t" + variableName + genVariableAssignmentOperator() + str(genValue(draw, variables)) + ";\n"), variables
+    return (depth * "\t" + variableName + draw(variableAssignmentOperators) + str(
+        draw(genValue(variables))) + ";\n"), variables
 
 
 def genVariable(draw, variables):
@@ -133,5 +114,6 @@ def compilertest(s):
     output1 = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     output2 = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
     assert str(output1) == nativeRemover(str(output2))
+
 
 compilertest()
