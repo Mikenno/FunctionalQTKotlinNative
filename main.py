@@ -43,8 +43,8 @@ def genExp(draw, variables):
         return genVariableChange(draw, variables)
 
 
-def genVariableOperator():
-    r = random.randint(1, 10)
+def genVariableAssignmentOperator():
+    r = random.randint(1, 5)
     if r == 1:
         return "="
     elif r == 2:
@@ -55,22 +55,29 @@ def genVariableOperator():
         return "/="
     elif r == 5:
         return "*="
-    elif r == 6:
+
+def genVariableOperator():
+    r = random.randint(1, 5)
+    if r == 1:
         return "+"
-    elif r == 7:
+    elif r == 2:
         return "-"
-    elif r == 8:
+    elif r == 3:
         return "*"
-    elif r == 9:
+    elif r == 4:
         return "/"
-    elif r == 10:
+    elif r == 5:
         return "%"
 
 
 def genValue(draw, variables):
-    r = random.randint(1, 4)
+    r = random.randint(1, 8)
     if r < 4 or len(variables) == 0:
         return draw(numbers)
+    elif r < 6:
+        return str(genValue(draw, variables)) + " " + genVariableOperator() + " " + str(genValue(draw, variables))
+    elif r < 7:
+        return "(" + str(genValue(draw, variables)) + " " + genVariableOperator() + " " + str(genValue(draw, variables)) + ")"
     else:
         r = random.randint(0, len(variables) - 1)
         return variables[r]
@@ -82,7 +89,7 @@ def genVariableChange(draw, variables):
 
     index = random.randint(0, len(variables) - 1)
     variableName = variables[index]
-    return (depth * "\t" + variableName + genVariableOperator() + str(genValue(draw, variables)) + ";\n"), variables
+    return (depth * "\t" + variableName + genVariableAssignmentOperator() + str(genValue(draw, variables)) + ";\n"), variables
 
 
 def genVariable(draw, variables):
