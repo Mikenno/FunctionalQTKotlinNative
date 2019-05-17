@@ -63,6 +63,7 @@ def chooseVariableName(draw, variables, varType=None):
             potentials.append(var[0])
     return draw(sampled_from(potentials))
 
+
 @composite
 def chooseVariable(draw, variables, varType=None):
     assume(len(variables) != 0)
@@ -71,6 +72,7 @@ def chooseVariable(draw, variables, varType=None):
         if var[1] == varType or varType is None:
             potentials.append(var)
     return draw(sampled_from(potentials))
+
 
 @composite
 def buildValue(draw, variables, type):
@@ -86,6 +88,7 @@ def buildValue(draw, variables, type):
 @composite
 def buildValueParenthesis(draw, variables, type):
     return "(" + draw(buildValue(variables, type)) + ")"
+
 
 @composite
 def buildPrimitive(draw, type):
@@ -104,6 +107,7 @@ def genValue(draw, variables, type):
         buildValueParenthesis(variables, type),
         chooseVariableName(variables, type)
     )))
+
 
 @composite
 def genType(draw):
@@ -131,17 +135,14 @@ def genVariableChange(draw, variables):
 
 @composite
 def genVariable(draw, variables, type=None):
-    newName = True
+    nameUsed = True
     if type == None:
         type = draw(genType())
     value = draw(genValue(variables, type))
-    name = ""
-    while newName:
-        name = draw(names)
-        if name not in variables:
-            newName = False
-            variables.append((name, type))
+    name = draw(names)
+    variables.append((name, type))
     return (depth * "\t" + 'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables
+
 
 @composite
 def projectsv2(draw):
@@ -159,7 +160,8 @@ def nativeRemover(inputString):
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=5, verbosity=Verbosity.debug)
+@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=5,
+          verbosity=Verbosity.debug)
 def test_compilertest(s):
     dt = datetime.now()
     name = "out/folder" + (str(dt.microsecond))
