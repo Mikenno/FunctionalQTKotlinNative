@@ -9,6 +9,7 @@ import random
 import string
 from datetime import datetime
 
+from hypothesis import assume, Verbosity
 from hypothesis import settings, given, HealthCheck
 from hypothesis.strategies import text, characters, composite, integers, decimals
 
@@ -23,7 +24,7 @@ functionParametersCount = integers(min_value=0, max_value=10)
 fuelGen = integers(min_value=1, max_value=50)
 
 depth = 1
-
+fuel = 0
 
 @composite
 def projects(draw):
@@ -35,23 +36,23 @@ def projects(draw):
     return code.replace("World", name)
 
 
-def genCode(draw):
-    fuel = draw(fuelGen)
+def genCode(draw, variables, functions):
     string_code = ""
-    variables = []
+    global fuel
     while (fuel > 0):
-        newCode, newVariableList = draw(genExp(variables))
+        newCode, newVariableList = draw(genExp(variables, functions))
         variables = newVariableList
         string_code += newCode
         fuel -= 1
-    return string_code
+    return string_code, variables
 
 
 @composite
-def genExp(draw, variables):
+def genExp(draw, variables, functions):
     return draw(one_of(
         genVariable(variables),
-        genVariableChange(variables)
+        genVariableChange(variables),
+        genFunction(functions, variables)
     ))
 
 
@@ -154,8 +155,56 @@ def genVariable(draw, variables, type=None):
 
 
 @composite
+def genFunction(draw, functions, variables):
+    name = draw(names)
+    functionNames = []
+    for varName in functions:
+        functionNames.append(varName[0])
+    assume(name not in functionNames)
+    type = draw(genType())
+    parameters, parametercode = draw(genParameters())
+    code = """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
+        input
+        output
+    }"""
+
+    gen, parameters = genCode(draw, parameters, functions)
+    list = parameters
+    returnvariable = draw(chooseVariableName(list, type))
+    if (returnvariable is None):
+        returncode = """return null"""
+    else:
+        returncode = """return """ + returnvariable
+    functions.append((name, type))
+    return code.replace("input", gen).replace("output", returncode), variables
+
+@composite
+def genParameters(draw):
+    amount = draw(functionParametersCount)
+    s = ""
+    paramterlist = []
+    paramternamelist = []
+    for x in range(amount):
+        name = draw(names)
+        type = draw(genType())
+        assume(name not in paramternamelist)
+        paramternamelist.append(name)
+        paramterlist.append((name, type))
+        if x == amount - 1:
+            s += name + " :"+type
+        else:
+            s += name + " :" + type + ", "
+    return paramterlist, s
+
+
+
+@composite
 def projectsv2(draw):
-    gen = genCode(draw)
+    global fuel
+    fuel = draw(fuelGen)
+    functions = []
+    variables = []
+    gen, variables = genCode(draw, variables, functions)
     code = """fun main(args: Array<String>) {
 input}
     """
