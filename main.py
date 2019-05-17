@@ -154,9 +154,9 @@ input}
 
 
 def nativeRemover(inputString):
-    inputString = inputString[0].replace("inline", "")
-    inputString = inputString[0].replace("@TypedIntrinsic ", "")
-    return inputString[0].replace("-native", "")
+    inputString = inputString.replace("inline", "")
+    inputString = inputString.replace("@TypedIntrinsic ", "")
+    return inputString.replace("-native", "")
 
 
 @given(projectsv2())
