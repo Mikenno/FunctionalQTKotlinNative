@@ -50,8 +50,8 @@ def genExp(draw, variables):
     ))
 
 
-variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*=", "/=", "%="])
-variableOperators = sampled_from(["+", "-", "*", "/", "%"])
+variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*="])  # Division (/ and %) is temporarily excluded
+variableOperators = sampled_from(["+", "-", "*"])  # Division (/ and %) is temporarily excluded
 
 
 @composite
@@ -135,11 +135,15 @@ def genVariableChange(draw, variables):
 
 @composite
 def genVariable(draw, variables, type=None):
-    nameUsed = True
     if type == None:
         type = draw(genType())
     value = draw(genValue(variables, type))
     name = draw(names)
+    variableNames = []
+    for varName in variables:
+        variableNames.append(varName[0])
+    assume(name not in variableNames)
+
     variables.append((name, type))
     return (depth * "\t" + 'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables
 
@@ -156,11 +160,12 @@ input}
 def nativeRemover(inputString):
     inputString = inputString.replace("inline", "")
     inputString = inputString.replace("@TypedIntrinsic ", "")
+    inputString = inputString.replace("external", "")
     return inputString.replace("-native", "")
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=5,
+@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=20,
           verbosity=Verbosity.debug)
 def test_compilertest(s):
     dt = datetime.now()
@@ -168,4 +173,4 @@ def test_compilertest(s):
     print("run " + str(dt.microsecond))
     (output1) = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     (output2) = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
-    assert str(output1) == nativeRemover(str(output2))
+    assert nativeRemover(str(output1)) == nativeRemover(str(output2))
