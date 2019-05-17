@@ -35,7 +35,7 @@ def genCode(draw):
     string_code = ""
     variables = []
     while (fuel > 0):
-        newCode, newVariableList = draw(draw(genExp(variables)))
+        newCode, newVariableList = draw(genExp(variables))
         variables = newVariableList
         string_code += newCode
         fuel -= 1
@@ -44,10 +44,10 @@ def genCode(draw):
 
 @composite
 def genExp(draw, variables):
-    return one_of(
+    return draw(one_of(
         genVariable(variables),
         genVariableChange(variables)
-    )
+    ))
 
 
 variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*=", "/="])
