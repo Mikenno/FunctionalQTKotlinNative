@@ -256,3 +256,26 @@ def test_compilertest(s):
     (output1) = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     (output2) = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
     assert nativeRemover(str(output1)) == nativeRemover(str(output2))
+
+
+def TimestampMillisec64():
+    return int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds() * 1000)
+
+
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=100,
+          verbosity=Verbosity.debug)
+@given(names)
+def test_simple_out(input):
+    code = """fun main(args: Array<String>) {
+println("{input}")
+}""".replace("{input}", input)
+
+    name = "out/folder" + (str(TimestampMillisec64()))
+    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
+    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
+
+    assert output1[1] == input
+    assert output2[1] == input
+
+
+test_simple_out()
