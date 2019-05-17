@@ -15,16 +15,26 @@ from hypothesis.strategies import text, characters, composite, integers, decimal
 
 import runner
 
+NUMBER_TYPES = ["Long", "Int", "Double"]
+COMPATIBLE_TYPES = {"String": ["String"] + NUMBER_TYPES,
+                    "Long": NUMBER_TYPES,
+                    "Int": NUMBER_TYPES,
+                    "Double": NUMBER_TYPES}
+
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
-integer = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
+
+long = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
+integer = integers(min_value=-math.pow(2, 31), max_value=math.pow(2, 31) - 1)
 positiveIntegers = integers(min_value=0, max_value=math.pow(2, 63) - 1)
 negativeIntegers = integers(min_value=-math.pow(2, 63), max_value=0)
-doubles = decimals(allow_infinity=False, allow_nan=False)
+double = decimals(allow_infinity=False, allow_nan=False)
+
 functionParametersCount = integers(min_value=0, max_value=10)
 fuelGen = integers(min_value=1, max_value=50)
 
 depth = 1
 fuel = 0
+
 
 @composite
 def projects(draw):
@@ -58,6 +68,7 @@ def genExp(draw, variables, functions):
 
 variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*="])  # Division (/ and %) is temporarily excluded
 variableOperators = sampled_from(["+", "-", "*"])  # Division (/ and %) is temporarily excluded
+stringAssignmentOperators = sampled_from(["=", "+="])
 
 
 @composite
@@ -65,8 +76,13 @@ def chooseVariableName(draw, variables, varType=None):
     assume(len(variables) != 0)
     potentials = []
     for var in variables:
-        if var[1] == varType or varType is None:
-            potentials.append(var[0])
+        if type(varType) in [list, tuple]:
+            for values in varType:
+                if var[1] == values:
+                    potentials.append(var[0])
+        else:
+            if var[1] == varType or varType is None:
+                potentials.append(var[0])
     return draw(sampled_from(potentials))
 
 
@@ -75,14 +91,20 @@ def chooseVariable(draw, variables, varType=None):
     assume(len(variables) != 0)
     potentials = []
     for var in variables:
-        if var[1] == varType or varType is None:
-            potentials.append(var)
+        if type(varType) in [list, tuple]:
+            for values in varType:
+                if var[1] == values:
+                    potentials.append(var)
+        else:
+            if var[1] == varType or varType is None:
+                potentials.append(var)
+
     return draw(sampled_from(potentials))
 
 
 @composite
 def buildValue(draw, variables, type):
-    if type == "Long":
+    if type in NUMBER_TYPES:
         operator = draw(variableOperators)
     elif type == "String":
         operator = "+"
@@ -99,7 +121,13 @@ def buildValueParenthesis(draw, variables, type):
 @composite
 def buildPrimitive(draw, type):
     if type == "Long":
+        return draw(long)
+
+    if type == "Int":
         return draw(integer)
+
+    if type == "Double":
+        return draw(just(str(draw(double)) + "d"))
 
     if type == "String":
         return draw(just("\"" + draw(names) + "\""))
@@ -117,7 +145,7 @@ def genValue(draw, variables, type):
 
 @composite
 def genType(draw):
-    return draw(sampled_from(["Long", "String"]))
+    return draw(sampled_from(NUMBER_TYPES + ["String"]))
 
 
 @composite
@@ -129,10 +157,10 @@ def genVariableChange(draw, variables):
     variableName = variable[0]
     type = variable[1]
 
-    if type == "Long":
+    if type in NUMBER_TYPES:
         operator = draw(variableAssignmentOperators)
     elif type == "String":
-        operator = draw(sampled_from(["=", "+="]))
+        operator = draw(stringAssignmentOperators)
     else:
         operator = "="
     return (depth * "\t" + variableName + operator + str(
@@ -178,6 +206,7 @@ def genFunction(draw, functions, variables):
     functions.append((name, type))
     return code.replace("input", gen).replace("output", returncode), variables
 
+
 @composite
 def genParameters(draw):
     amount = draw(functionParametersCount)
@@ -191,11 +220,10 @@ def genParameters(draw):
         paramternamelist.append(name)
         paramterlist.append((name, type))
         if x == amount - 1:
-            s += name + " :"+type
+            s += name + " :" + type
         else:
             s += name + " :" + type + ", "
     return paramterlist, s
-
 
 
 @composite
