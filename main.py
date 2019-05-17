@@ -10,12 +10,16 @@ import string
 from datetime import datetime
 
 from hypothesis import settings, given, HealthCheck
-from hypothesis.strategies import text, characters, composite, integers
+from hypothesis.strategies import text, characters, composite, integers, decimals
 
 import runner
 
 names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
-numbers = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
+integer = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
+positiveIntegers = integers(min_value=0, max_value=math.pow(2, 63) - 1)
+negativeIntegers = integers(min_value=-math.pow(2, 63), max_value=0)
+doubles = decimals(allow_infinity=False, allow_nan=False)
+functionParametersCount = integers(min_value=0, max_value=10)
 
 depth = 1
 
@@ -93,7 +97,7 @@ def buildValueParenthesis(draw, variables, type):
 @composite
 def buildPrimitive(draw, type):
     if type == "Long":
-        return draw(numbers)
+        return draw(integer)
 
     if type == "String":
         return draw(just("\"" + draw(names) + "\""))
@@ -165,7 +169,7 @@ def nativeRemover(inputString):
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=20,
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=100,
           verbosity=Verbosity.debug)
 def test_compilertest(s):
     dt = datetime.now()
