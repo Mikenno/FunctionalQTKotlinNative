@@ -85,7 +85,7 @@ def genVariableChange(draw, variables):
     if len(variables) == 0:
         return draw(genVariable(variables))
 
-    variableName = draw(chooseVariable)
+    variableName = draw(chooseVariable(variables))
     return (depth * "\t" + variableName + draw(variableAssignmentOperators) + str(
         draw(genValue(variables))) + ";\n"), variables
 
