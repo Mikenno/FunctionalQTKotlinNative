@@ -165,7 +165,7 @@ def nativeRemover(inputString):
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=[HealthCheck.large_base_example], max_examples=20,
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=20,
           verbosity=Verbosity.debug)
 def test_compilertest(s):
     dt = datetime.now()
