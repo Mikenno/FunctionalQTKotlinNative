@@ -20,6 +20,7 @@ positiveIntegers = integers(min_value=0, max_value=math.pow(2, 63) - 1)
 negativeIntegers = integers(min_value=-math.pow(2, 63), max_value=0)
 doubles = decimals(allow_infinity=False, allow_nan=False)
 functionParametersCount = integers(min_value=0, max_value=10)
+fuelGen = integers(min_value=1, max_value=50)
 
 depth = 1
 
@@ -35,7 +36,7 @@ def projects(draw):
 
 
 def genCode(draw):
-    fuel = 25
+    fuel = draw(fuelGen)
     string_code = ""
     variables = []
     while (fuel > 0):
