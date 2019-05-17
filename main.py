@@ -50,34 +50,64 @@ def genExp(draw, variables):
     ))
 
 
-variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*=", "/="])
+variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*=", "/=", "%="])
 variableOperators = sampled_from(["+", "-", "*", "/", "%"])
 
 
 @composite
-def chooseVariable(draw, variables):
+def chooseVariableName(draw, variables, varType=None):
     assume(len(variables) != 0)
-    return draw(sampled_from(variables))
+    potentials = []
+    for var in variables:
+        if var[1] == varType or varType is None:
+            potentials.append(var[0])
+    return draw(sampled_from(potentials))
+
+@composite
+def chooseVariable(draw, variables, varType=None):
+    assume(len(variables) != 0)
+    potentials = []
+    for var in variables:
+        if var[1] == varType or varType is None:
+            potentials.append(var)
+    return draw(sampled_from(potentials))
+
+@composite
+def buildValue(draw, variables, type):
+    if type == "Long":
+        operator = draw(variableOperators)
+    elif type == "String":
+        operator = "+"
+    else:
+        return draw(genValue(variables, type))
+    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, type))
 
 
 @composite
-def buildValue(draw, variables):
-    return draw(genValue(variables)) + " " + draw(variableOperators) + " " + draw(genValue(variables))
+def buildValueParenthesis(draw, variables, type):
+    return "(" + draw(buildValue(variables, type)) + ")"
+
+@composite
+def buildPrimitive(draw, type):
+    if type == "Long":
+        return draw(numbers)
+
+    if type == "String":
+        return draw(just("\"" + draw(names) + "\""))
 
 
 @composite
-def buildValueParenthesis(draw, variables):
-    return "(" + draw(buildValue(variables)) + ")"
-
-
-@composite
-def genValue(draw, variables):
+def genValue(draw, variables, type):
     return str(draw(one_of(
-        numbers,
-        buildValue(variables),
-        buildValueParenthesis(variables),
-        chooseVariable(variables)
+        buildPrimitive(type),
+        buildValue(variables, type),
+        buildValueParenthesis(variables, type),
+        chooseVariableName(variables, type)
     )))
+
+@composite
+def genType(draw):
+    return draw(sampled_from(["Long", "String"]))
 
 
 @composite
@@ -85,22 +115,33 @@ def genVariableChange(draw, variables):
     if len(variables) == 0:
         return draw(genVariable(variables))
 
-    variableName = draw(chooseVariable(variables))
-    return (depth * "\t" + variableName + draw(variableAssignmentOperators) + str(
-        draw(genValue(variables))) + ";\n"), variables
+    variable = draw(chooseVariable(variables))
+    variableName = variable[0]
+    type = variable[1]
+
+    if type == "Long":
+        operator = draw(variableAssignmentOperators)
+    elif type == "String":
+        operator = draw(sampled_from(["=", "+="]))
+    else:
+        operator = "="
+    return (depth * "\t" + variableName + operator + str(
+        draw(genValue(variables, type))) + ";\n"), variables
 
 
 @composite
-def genVariable(draw, variables):
+def genVariable(draw, variables, type=None):
     newName = True
-    value = draw(genValue(variables))
+    if type == None:
+        type = draw(genType())
+    value = draw(genValue(variables, type))
     name = ""
     while newName:
         name = draw(names)
         if name not in variables:
             newName = False
-            variables.append(name)
-    return (depth * "\t" + 'var ' + name + ' = ' + str(value) + ';\n'), variables
+            variables.append((name, type))
+    return (depth * "\t" + 'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables
 
 @composite
 def projectsv2(draw):
@@ -112,9 +153,9 @@ input}
 
 
 def nativeRemover(inputString):
-    inputString = inputString.replace("inline", "")
-    inputString = inputString.replace("@TypedIntrinsic ", "")
-    return inputString.replace("-native", "")
+    inputString = inputString[0].replace("inline", "")
+    inputString = inputString[0].replace("@TypedIntrinsic ", "")
+    return inputString[0].replace("-native", "")
 
 
 @given(projectsv2())
@@ -123,6 +164,6 @@ def test_compilertest(s):
     dt = datetime.now()
     name = "out/folder" + (str(dt.microsecond))
     print("run " + str(dt.microsecond))
-    output1 = runner.run(s, "kotlinc-jvm", outputDirectory=name)
-    output2 = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
+    (output1) = runner.run(s, "kotlinc-jvm", outputDirectory=name)
+    (output2) = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
     assert str(output1) == nativeRemover(str(output2))

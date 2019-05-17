@@ -35,7 +35,7 @@ def run(code, compiler="kotlinc", outputDirectory="out", codeFileName="code.kt",
     writeCodeFile(code, codeFileName)
     compilerOutput = compileFile(codeFileName, exeFileName, compiler)
     runOutput = runFile(exeFileName, compiler)
-    return compilerOutput, runOutput
+    return (compilerOutput, runOutput)
 
 
 def runFile(file, compiler):
