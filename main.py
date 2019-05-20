@@ -25,8 +25,8 @@ names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), m
 
 long = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
 integer = integers(min_value=-math.pow(2, 31), max_value=math.pow(2, 31) - 1)
-positiveIntegers = integers(min_value=0, max_value=math.pow(2, 63) - 1)
-negativeIntegers = integers(min_value=-math.pow(2, 63), max_value=0)
+positiveInteger = integers(min_value=0, max_value=math.pow(2, 63) - 1)
+negativeInteger = integers(min_value=-math.pow(2, 63), max_value=0)
 double = decimals(allow_infinity=False, allow_nan=False)
 
 functionParametersCount = integers(min_value=0, max_value=10)
@@ -58,11 +58,42 @@ def genCode(draw, variables, functions):
 
 
 @composite
+def genLoop(draw, variables, functions):
+    startValue = draw(integer)
+    varName = draw(names)
+
+    variableNames = []
+    for vars in variables:
+        variableNames.append(vars[0])
+    assume(varName not in variableNames)
+    endValue = draw(integer)
+
+    global depth
+    indention = depth * "\t"
+    depth += 1
+
+    global fuel
+    newFuel = draw(integers(min_value=1, max_value=min([25, fuel])))
+    fuel -= newFuel
+    finalCode = ""
+
+    localVars = variables.copy()
+
+    while fuel > 0:
+        code, vars = genCode(draw, localVars, functions)
+        finalCode += code
+        localVars = vars
+
+    return indention + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables
+
+
+@composite
 def genExp(draw, variables, functions):
     return draw(one_of(
-        genVariable(variables),
-        genVariableChange(variables),
-        genFunction(functions, variables)
+        genVariable(variables=variables),
+        genVariableChange(variables=variables),
+        genFunction(variables=variables, functions=functions),
+        genLoop(variables, functions)
     ))
 
 
@@ -265,7 +296,7 @@ def TimestampMillisec64():
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10,
           verbosity=Verbosity.debug)
 @given(names)
-def test_simple_out(input):
+def simple_out(input):
     code = """fun main(args: Array<String>) {
 println("{input}")
 }""".replace("{input}", input)
@@ -276,6 +307,3 @@ println("{input}")
 
     assert output1[1] == input
     assert output2[1] == input
-
-
-test_simple_out()
