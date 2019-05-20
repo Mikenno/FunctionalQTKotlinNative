@@ -50,11 +50,11 @@ def genCode(draw, variables, functions):
     string_code = ""
     global fuel
     while (fuel > 0):
-        newCode, newVariableList = draw(genExp(variables, functions))
+        newCode, newVariableList, functions = draw(genExp(variables, functions))
         variables = newVariableList
         string_code += newCode
         fuel -= 1
-    return string_code, variables
+    return string_code, variables, functions
 
 
 @composite
@@ -78,20 +78,22 @@ def genLoop(draw, variables, functions):
     finalCode = ""
 
     localVars = variables.copy()
+    localFuncs = functions.copy()
 
     while fuel > 0:
-        code, vars = genCode(draw, localVars, functions)
+        code, vars, funcs = genCode(draw, localVars, localFuncs)
         finalCode += code
         localVars = vars
+        localFuncs = funcs
 
-    return indention + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables
+    return indention + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables, functions
 
 
 @composite
 def genExp(draw, variables, functions):
     return draw(one_of(
-        genVariable(variables=variables),
-        genVariableChange(variables=variables),
+        genVariable(variables=variables, functions=functions),
+        genVariableChange(variables=variables, functions=functions),
         genFunction(variables=variables, functions=functions),
         genLoop(variables, functions)
     ))
@@ -180,9 +182,9 @@ def genType(draw):
 
 
 @composite
-def genVariableChange(draw, variables):
+def genVariableChange(draw, variables, functions):
     if len(variables) == 0:
-        return draw(genVariable(variables))
+        return draw(genVariable(variables, functions))
 
     variable = draw(chooseVariable(variables))
     variableName = variable[0]
@@ -195,11 +197,11 @@ def genVariableChange(draw, variables):
     else:
         operator = "="
     return (depth * "\t" + variableName + operator + str(
-        draw(genValue(variables, type))) + ";\n"), variables
+        draw(genValue(variables, type))) + ";\n"), variables, functions
 
 
 @composite
-def genVariable(draw, variables, type=None):
+def genVariable(draw, variables, functions, type=None):
     if type == None:
         type = draw(genType())
     value = draw(genValue(variables, type))
@@ -210,11 +212,11 @@ def genVariable(draw, variables, type=None):
     assume(name not in variableNames)
 
     variables.append((name, type))
-    return (depth * "\t" + 'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables
+    return (depth * "\t" + 'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
 
 
 @composite
-def genFunction(draw, functions, variables):
+def genFunction(draw, variables, functions):
     name = draw(names)
     functionNames = []
     for varName in functions:
@@ -227,15 +229,15 @@ def genFunction(draw, functions, variables):
         output
     }"""
 
-    gen, parameters = genCode(draw, parameters, functions)
-    list = parameters
-    returnvariable = draw(chooseVariableName(list, type))
+    gen, parameters, extraFuncs = genCode(draw, parameters, functions)
+    parameters += variables.copy()
+    returnvariable = draw(chooseVariableName(parameters, type))
     if (returnvariable is None):
         returncode = """return null"""
     else:
         returncode = """return """ + returnvariable
     functions.append((name, type))
-    return code.replace("input", gen).replace("output", returncode), variables
+    return code.replace("input", gen).replace("output", returncode), variables, functions
 
 
 @composite
@@ -263,7 +265,7 @@ def projectsv2(draw):
     fuel = draw(fuelGen)
     functions = []
     variables = []
-    gen, variables = genCode(draw, variables, functions)
+    gen, variables, functions = genCode(draw, variables, functions)
     code = """fun main(args: Array<String>) {
 input}
     """
