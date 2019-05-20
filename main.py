@@ -32,7 +32,6 @@ double = decimals(allow_infinity=False, allow_nan=False)
 functionParametersCount = integers(min_value=0, max_value=10)
 fuelGen = integers(min_value=1, max_value=50)
 
-depth = 1
 fuel = 0
 
 
@@ -68,10 +67,6 @@ def genLoop(draw, variables, functions):
     assume(varName not in variableNames)
     endValue = draw(integer)
 
-    global depth
-    indention = depth * "\t"
-    depth += 1
-
     global fuel
     newFuel = draw(integers(min_value=1, max_value=min([25, fuel])))
     fuel -= newFuel
@@ -86,7 +81,7 @@ def genLoop(draw, variables, functions):
         localVars = vars
         localFuncs = funcs
 
-    return indention + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables, functions
+    return "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables, functions
 
 
 @composite
@@ -196,7 +191,7 @@ def genVariableChange(draw, variables, functions):
         operator = draw(stringAssignmentOperators)
     else:
         operator = "="
-    return (depth * "\t" + variableName + operator + str(
+    return (variableName + operator + str(
         draw(genValue(variables, type))) + ";\n"), variables, functions
 
 
@@ -212,7 +207,7 @@ def genVariable(draw, variables, functions, type=None):
     assume(name not in variableNames)
 
     variables.append((name, type))
-    return (depth * "\t" + 'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
+    return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
 
 
 @composite
@@ -225,9 +220,9 @@ def genFunction(draw, variables, functions):
     type = draw(genType())
     parameters, parametercode = draw(genParameters())
     code = """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
-        input
-        output
-    }"""
+input
+output
+}"""
 
     gen, parameters, extraFuncs = genCode(draw, parameters, functions)
     parameters += variables.copy()
@@ -267,7 +262,8 @@ def projectsv2(draw):
     variables = []
     gen, variables, functions = genCode(draw, variables, functions)
     code = """fun main(args: Array<String>) {
-input}
+input
+}
     """
     return code.replace("input", gen)
 
