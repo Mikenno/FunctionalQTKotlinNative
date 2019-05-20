@@ -73,6 +73,7 @@ def genLoop(draw, variables, functions):
     finalCode = ""
 
     localVars = variables.copy()
+    localVars += [(varName, "Int", True)]
     localFuncs = functions.copy()
 
     while fuel > 0:
@@ -100,31 +101,31 @@ stringAssignmentOperators = sampled_from(["=", "+="])
 
 
 @composite
-def chooseVariableName(draw, variables, varType=None):
+def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
     assume(len(variables) != 0)
     potentials = []
     for var in variables:
         if type(varType) in [list, tuple]:
             for values in varType:
-                if var[1] == values:
+                if var[1] == values and (not writeableRequired or var[2] == writeableRequired):
                     potentials.append(var[0])
         else:
-            if var[1] == varType or varType is None:
+            if (var[1] == varType or varType is None) and (not writeableRequired or var[2] == writeableRequired):
                 potentials.append(var[0])
     return draw(sampled_from(potentials))
 
 
 @composite
-def chooseVariable(draw, variables, varType=None):
+def chooseVariable(draw, variables, varType=None, writeableRequired=True):
     assume(len(variables) != 0)
     potentials = []
     for var in variables:
         if type(varType) in [list, tuple]:
             for values in varType:
-                if var[1] == values:
+                if var[1] == values and (not writeableRequired or var[2] == writeableRequired):
                     potentials.append(var)
         else:
-            if var[1] == varType or varType is None:
+            if (var[1] == varType or varType is None) and (not writeableRequired or var[2] == writeableRequired):
                 potentials.append(var)
 
     return draw(sampled_from(potentials))
@@ -167,7 +168,7 @@ def genValue(draw, variables, type):
         buildPrimitive(type),
         buildValue(variables, type),
         buildValueParenthesis(variables, type),
-        chooseVariableName(variables, type)
+        chooseVariableName(variables, type, writeableRequired=False)
     )))
 
 
@@ -206,7 +207,7 @@ def genVariable(draw, variables, functions, type=None):
         variableNames.append(varName[0])
     assume(name not in variableNames)
 
-    variables.append((name, type))
+    variables.append((name, type, False))
     return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
 
 
@@ -246,7 +247,7 @@ def genParameters(draw):
         type = draw(genType())
         assume(name not in paramternamelist)
         paramternamelist.append(name)
-        paramterlist.append((name, type))
+        paramterlist.append((name, type, True))
         if x == amount - 1:
             s += name + " :" + type
         else:
@@ -291,10 +292,10 @@ def TimestampMillisec64():
     return int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds() * 1000)
 
 
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10,
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
           verbosity=Verbosity.debug)
 @given(names)
-def simple_out(input):
+def test_simple_out(input):
     code = """fun main(args: Array<String>) {
 println("{input}")
 }""".replace("{input}", input)
