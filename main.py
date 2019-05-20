@@ -250,9 +250,9 @@ def nativeRemover(inputString):
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=100,
           verbosity=Verbosity.debug)
 def test_compilertest(s):
-    dt = datetime.now()
-    name = "out/folder" + (str(dt.microsecond))
-    print("run " + str(dt.microsecond))
+    milisec = TimestampMillisec64()
+    name = "out/folder" + (str(milisec))
+    print("run " + str(milisec))
     (output1) = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     (output2) = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
     assert nativeRemover(str(output1)) == nativeRemover(str(output2))
