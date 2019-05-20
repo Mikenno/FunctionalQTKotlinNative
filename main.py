@@ -58,14 +58,14 @@ def genCode(draw, variables, functions):
 
 @composite
 def genLoop(draw, variables, functions):
-    startValue = draw(integer)
+    startValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
     varName = draw(names)
 
     variableNames = []
     for vars in variables:
         variableNames.append(vars[0])
     assume(varName not in variableNames)
-    endValue = draw(integer)
+    endValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
 
     global fuel
     newFuel = draw(integers(min_value=1, max_value=min([20, fuel])))
