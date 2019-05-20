@@ -30,7 +30,7 @@ negativeInteger = integers(min_value=-math.pow(2, 63), max_value=0)
 double = decimals(allow_infinity=False, allow_nan=False)
 
 functionParametersCount = integers(min_value=0, max_value=10)
-fuelGen = integers(min_value=1, max_value=50)
+fuelGen = integers(min_value=1, max_value=200)
 
 fuel = 0
 
@@ -68,19 +68,20 @@ def genLoop(draw, variables, functions):
     endValue = draw(integer)
 
     global fuel
-    newFuel = draw(integers(min_value=1, max_value=min([25, fuel])))
+    newFuel = draw(integers(min_value=1, max_value=min([20, fuel])))
     fuel -= newFuel
     finalCode = ""
 
     localVars = variables.copy()
-    localVars += [(varName, "Int", True)]
+    localVars += [(varName, "Int", False)]
     localFuncs = functions.copy()
 
-    while fuel > 0:
+    while newFuel > 0:
         code, vars, funcs = genCode(draw, localVars, localFuncs)
         finalCode += code
         localVars = vars
         localFuncs = funcs
+        newFuel -= 1
 
     return "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables, functions
 
@@ -107,10 +108,10 @@ def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
     for var in variables:
         if type(varType) in [list, tuple]:
             for values in varType:
-                if var[1] == values and (not writeableRequired or var[2] == writeableRequired):
+                if var[1] == values and ((var[2] and writeableRequired) or not writeableRequired):
                     potentials.append(var[0])
         else:
-            if (var[1] == varType or varType is None) and (not writeableRequired or var[2] == writeableRequired):
+            if (var[1] == varType or varType is None) and ((var[2] and writeableRequired) or not writeableRequired):
                 potentials.append(var[0])
     return draw(sampled_from(potentials))
 
@@ -122,10 +123,10 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
     for var in variables:
         if type(varType) in [list, tuple]:
             for values in varType:
-                if var[1] == values and (not writeableRequired or var[2] == writeableRequired):
+                if var[1] == values and ((var[2] and writeableRequired) or not writeableRequired):
                     potentials.append(var)
         else:
-            if (var[1] == varType or varType is None) and (not writeableRequired or var[2] == writeableRequired):
+            if (var[1] == varType or varType is None) and ((var[2] and writeableRequired) or not writeableRequired):
                 potentials.append(var)
 
     return draw(sampled_from(potentials))
@@ -207,7 +208,7 @@ def genVariable(draw, variables, functions, type=None):
         variableNames.append(varName[0])
     assume(name not in variableNames)
 
-    variables.append((name, type, False))
+    variables.append((name, type, True))
     return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
 
 
@@ -247,7 +248,7 @@ def genParameters(draw):
         type = draw(genType())
         assume(name not in paramternamelist)
         paramternamelist.append(name)
-        paramterlist.append((name, type, True))
+        paramterlist.append((name, type, False))
         if x == amount - 1:
             s += name + " :" + type
         else:
