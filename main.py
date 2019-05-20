@@ -247,7 +247,7 @@ def nativeRemover(inputString):
 
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=100,
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=20,
           verbosity=Verbosity.debug)
 def test_compilertest(s):
     milisec = TimestampMillisec64()
@@ -262,7 +262,7 @@ def TimestampMillisec64():
     return int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds() * 1000)
 
 
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=100,
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=10,
           verbosity=Verbosity.debug)
 @given(names)
 def test_simple_out(input):
