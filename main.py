@@ -224,10 +224,9 @@ def genVariable(draw, variables, functions, type=None):
 @composite
 def genFunction(draw, variables, functions, properties):
     functionNames = []
-    variableNames = []
-    for varName in variables:
-        variableNames.append(varName[0])
-    name = draw(names.filter(lambda x: x not in variableNames))
+    for funcName in functions:
+        functionNames.append(funcName[0])
+    name = draw(names.filter(lambda x: x not in functionNames))
     type = draw(genType())
     parameters, parametercode = draw(genParameters())
     code = """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
@@ -237,7 +236,10 @@ output
 
     gen, parameters, extraFuncs = genCode(draw, parameters, functions, properties)
     parameters += variables.copy()
-    returnvariable = draw(chooseVariableName(parameters, type))
+    if len(parameters) == 0:
+        returnvariable = None
+    else:
+        returnvariable = draw(chooseVariableName(parameters, type))
     if returnvariable is None:
         returncode = """return null"""
     else:
