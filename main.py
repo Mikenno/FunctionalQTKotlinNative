@@ -105,7 +105,7 @@ stringAssignmentOperators = sampled_from(["=", "+="])
 def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
     if len(variables) == 0:
         #assume(varType != None)
-        return draw(buildPrimitive(varType))
+        return str(draw(buildPrimitive(varType)))
     potentials = []
     for var in variables:
         if type(varType) in [list, tuple]:
@@ -116,7 +116,7 @@ def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
             if (var[1] == varType or varType is None) and ((var[2] and writeableRequired) or not writeableRequired):
                 potentials.append(var[0])
     if potentials == []:
-        return draw(buildPrimitive(varType))
+        return str(draw(buildPrimitive(varType)))
     return draw(sampled_from(potentials))
 
 
