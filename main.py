@@ -15,7 +15,7 @@ from hypothesis.strategies import text, characters, composite, integers, decimal
 
 import runner
 
-ARRAY_STR_ID = "Array"
+ARRAY_STR_ID = "Array<String>"
 
 NUMBER_TYPES = ["Long", "Int", "Double"]
 COMPATIBLE_TYPES = {"String": ["String"] + NUMBER_TYPES,
@@ -106,7 +106,6 @@ stringAssignmentOperators = sampled_from(["=", "+="])
 @composite
 def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
     if len(variables) == 0:
-        #assume(varType != None)
         return str(draw(buildPrimitive(varType)))
     potentials = []
     for var in variables:
@@ -137,22 +136,23 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
 
     return draw(sampled_from(potentials))
 
-@composite
-def genArrayEntry(draw, variables, string, properties):
-    string += str(draw(genValue(variables,["Long", "Int", "Double", "String"],properties)))
-    properties["fuel"] -= 1
-    if(properties["fuel"] >0):
-        string += ","
-        genArrayEntry(variables,string, properties)
-    else:
-        return string
 
 @composite
 def buildArray(draw, variables, properties):
+    print("building Array")
     localprop = properties.copy()
-    localprop["fuel"] = draw(integers(min_value=1, max_value=100))
-    value = draw(genArrayEntry(variables, "", localprop))
-    return "arrayOf(" + str(value) + ")"
+    localprop["fuel"] = draw(integers(min_value=1, max_value=20))
+    stringCode = ""
+    startFuel = localprop["fuel"]
+    print(startFuel)
+    for fuel in range(localprop["fuel"]):
+        stringCode += str(draw(genValue(variables, "String", properties)))
+        if(fuel != startFuel-1):
+            stringCode += ", "
+        print("Fuel: " + str(fuel) +  " array of: " + stringCode)
+        localprop["fuel"] -= 1
+
+    return "arrayOf(" + str(stringCode) + ")"
 
 @composite
 def buildValue(draw, variables, varType, properties):
@@ -202,6 +202,7 @@ def buildPrimitive(draw, varType):
 def genValue(draw, variables, type, properties):
     if(type == ARRAY_STR_ID):
         init = str(draw(buildArray(variables, properties)))
+        print("Finished Array")
         return init
     else:
         return str(draw(one_of(
@@ -213,7 +214,7 @@ def genValue(draw, variables, type, properties):
 
 @composite
 def genType(draw):
-    return draw(sampled_from(NUMBER_TYPES + ["String"] + [ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAY_STR_ID!
+    return draw(sampled_from(NUMBER_TYPES + ["String", ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAY_STR_ID!
 
 
 @composite
@@ -247,10 +248,7 @@ def genVariable(draw, variables, functions, properties, type=None):
     name = draw(names.filter(lambda x: x not in variableNames))
 
     variables.append((name, type, True))
-    if type == ARRAY_STR_ID:
-        return ('var ' + name +' = ' + str(value) + ';\n'), variables, functions
-    else:
-        return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
+    return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
 
 
 @composite
