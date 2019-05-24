@@ -5,6 +5,7 @@ from datetime import datetime
 from hypothesis import settings, given, HealthCheck, assume, Verbosity
 from hypothesis.strategies import just, text, characters, composite, integers, random_module
 import math
+import os
 import random
 import string
 from datetime import datetime
@@ -45,18 +46,18 @@ def projects(draw):
     return code.replace("World", name)
 
 
-def genCode(draw, variables, functions, properties):
+def genCode(draw, variables, functions, globalfunctions, properties):
     string_code = ""
     while properties["fuel"] > 0:
-        newCode, newVariableList, functions = draw(genExp(variables, functions, properties))
+        newCode, newVariableList, functions, globalfunctions = draw(genExp(variables, functions, globalfunctions, properties))
         variables = newVariableList
         string_code += newCode
         properties["fuel"] -= 1
-    return string_code, variables, functions
+    return string_code, variables, functions, globalfunctions
 
 
 @composite
-def genLoop(draw, variables, functions, properties):
+def genLoop(draw, variables, functions, globalfunctions, properties):
     startValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
 
     variableNames = []
@@ -67,6 +68,7 @@ def genLoop(draw, variables, functions, properties):
 
     localProps = properties.copy()
     localProps["fuel"] = draw(integers(min_value=1, max_value=min([20, properties["fuel"]])))
+    localProps["depth"] = localProps["depth"] + 1
     properties["fuel"] -= localProps["fuel"]
     finalCode = ""
 
@@ -75,26 +77,54 @@ def genLoop(draw, variables, functions, properties):
     localFuncs = functions.copy()
 
     while localProps["fuel"] > 0:
-        code, vars, funcs = genCode(draw, localVars, localFuncs, localProps)
+        code, vars, funcs, glob = genCode(draw, localVars, localFuncs, globalfunctions, localProps)
         finalCode += code
         localVars = vars
         localFuncs = funcs
+        globalfunctions = glob
         localProps["fuel"] -= 1
 
-    return "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}\n"), variables, functions
+    indentation = properties["depth"] * "    "
+    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}"), variables, functions, globalfunctions
+
+@composite
+def genCallFunction(draw, variables, functions, globalfunctions):
+    assume(len(functions) != 0 or len(globalfunctions) != 0)
+    #if type == None:
+    #    type = draw(genType())
+    functionlist = functions.copy()
+    for x in globalfunctions:
+        functionlist.append((x[0], x[1], x[2]))
+    #functionlist.extend([(f[0], f[1], f[2]) for f in globalfunctions])
+
+    #functionlist = functions + globalfunctions
+    #candidates = []
+    #for cand in functionlist:
+    #    if cand[1] == type:
+    #        candidates.append(cand)
+    # len(candidates) == o :(
+    candidates = functionlist.copy()
+    assume(len(candidates) != 0)
+    function = draw(sampled_from(candidates))
+    functionname = function[0]
+    parameterlist = function[2]
+    text = draw(names)
+    code = "var " + text + " = null"
+    #code = functionname + "(" + params + ")"
+    return code, variables, functions, globalfunctions
 
 
 @composite
-def genExp(draw, variables, functions, properties):
+def genExp(draw, variables, functions, globalfunctions, properties):
     return draw(one_of(
-        genVariable(variables=variables, functions=functions,  properties=properties),
-        genVariable(variables=variables, functions=functions,  properties=properties),
-        genVariable(variables=variables, functions=functions,  properties=properties),
-        genVariableChange(variables=variables, functions=functions, properties=properties),
-        genVariableChange(variables=variables, functions=functions, properties=properties),
-        genVariableChange(variables=variables, functions=functions, properties=properties),
-        genFunction(variables=variables, functions=functions, properties=properties),
-        genLoop(variables, functions, properties)
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genLoop(variables, functions,globalfunctions, properties)
     ))
 
 
@@ -133,23 +163,20 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
         else:
             if (var[1] == varType or varType is None) and ((var[2] and writeableRequired) or not writeableRequired):
                 potentials.append(var)
-
+    assume(len(potentials) != 0)
     return draw(sampled_from(potentials))
 
 
 @composite
 def buildArray(draw, variables, properties):
-    print("building Array")
     localprop = properties.copy()
     localprop["fuel"] = draw(integers(min_value=1, max_value=20))
     stringCode = ""
     startFuel = localprop["fuel"]
-    print(startFuel)
     for fuel in range(localprop["fuel"]):
         stringCode += str(draw(genValue(variables, "String", properties)))
         if(fuel != startFuel-1):
             stringCode += ", "
-        print("Fuel: " + str(fuel) +  " array of: " + stringCode)
         localprop["fuel"] -= 1
 
     return "arrayOf(" + str(stringCode) + ")"
@@ -190,7 +217,7 @@ def buildPrimitive(draw, varType):
         potentialStrategies.append(integer)
 
     if "Double" in varType:
-        potentialStrategies.append(double)
+        potentialStrategies.append(just(float(draw(double))))
 
     if "String" in varType:
         potentialStrategies.append(just("\"" + draw(names) + "\""))
@@ -202,7 +229,6 @@ def buildPrimitive(draw, varType):
 def genValue(draw, variables, type, properties):
     if(type == ARRAY_STR_ID):
         init = str(draw(buildArray(variables, properties)))
-        print("Finished Array")
         return init
     else:
         return str(draw(one_of(
@@ -218,9 +244,9 @@ def genType(draw):
 
 
 @composite
-def genVariableChange(draw, variables, functions, properties):
+def genVariableChange(draw, variables, functions, properties, globalfunctions):
     if len(variables) == 0:
-        return draw(genVariable(variables, functions, properties))
+        return draw(genVariable(variables, functions, properties, globalfunctions=globalfunctions))
 
     variable = draw(chooseVariable(variables))
     variableName = variable[0]
@@ -232,39 +258,50 @@ def genVariableChange(draw, variables, functions, properties):
         operator = draw(stringAssignmentOperators)
     else:
         operator = "="
-    return (variableName + operator + str(
-        draw(genValue(variables, type, properties))) + ";\n"), variables, functions
+
+    indentation = properties["depth"] * "    "
+    return indentation + (variableName + operator + str(
+        draw(genValue(variables, type, properties))) + ";\n"), variables, functions, globalfunctions
 
 
 @composite
-def genVariable(draw, variables, functions, properties, type=None):
+def genVariable(draw, variables, functions, properties, globalfunctions, type=None):
     if type == None:
         type = draw(genType())
     value = draw(genValue(variables, type, properties))
-    name = draw(names)
     variableNames = []
     for varName in variables:
         variableNames.append(varName[0])
     name = draw(names.filter(lambda x: x not in variableNames))
 
     variables.append((name, type, True))
-    return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
+    indentation = properties["depth"]* "    "
+    return indentation + ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions, globalfunctions
 
 
 @composite
-def genFunction(draw, variables, functions, properties):
+def genF(draw, variables, functions, globalfunctions, properties):
     functionNames = []
     for funcName in functions:
         functionNames.append(funcName[0])
     name = draw(names.filter(lambda x: x not in functionNames))
     type = draw(genType())
     parameters, parametercode = draw(genParameters())
-    code = """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
+    localProps = properties.copy()
+    localProps["fuel"] = draw(integers(min_value=1, max_value=min([30, properties["fuel"]])))
+    properties["fuel"] -= localProps["fuel"]
+
+    localProps["depth"] += 1
+    indentation = properties["depth"] * "    "
+    code = indentation + """\nfun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
 input
 output
-}"""
+""" + indentation + "}"
+    parameterlisttype = []
+    for param in parameters:
+        parameterlisttype.append(param[1])
 
-    gen, parameters, extraFuncs = genCode(draw, parameters, functions, properties)
+    gen, parameters, extraFuncs, globalfunctions = genCode(draw, parameters, functions, globalfunctions, localProps)
     parameters += variables.copy()
     if len(parameters) == 0:
         returnvariable = None
@@ -274,9 +311,28 @@ output
         returncode = """return null"""
     else:
         returncode = """return """ + returnvariable
-    functions.append((name, type))
-    return code.replace("input", gen).replace("output", returncode), variables, functions
+    returncode = indentation + returncode
+    functioncode = code.replace("input", gen).replace("output", returncode)
+    return functioncode, name, type, variables, parameterlisttype, functions, globalfunctions
 
+@composite
+def genInLineFunction(draw, variables, functions, globalfunctions, properties):
+    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(genF(variables, functions, globalfunctions, properties))
+    functions.append((functionname, funtiontype, parameterlisttype))
+    return functioncode, variables, inlinefunction, globalfunctions
+
+@composite
+def genOutSideFunction(draw, variables, functions, globalfunctions, properties):
+    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(genF(variables, [], globalfunctions, properties))
+    globalfunctions.append((functionname, funtiontype, parameterlisttype, functioncode))
+    return "", variables, functions, globalfunctions
+
+@composite
+def genFunction(draw, variables, functions, globalfunctions, properties):
+    return draw(one_of(
+        genInLineFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genOutSideFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties)
+    ))
 
 @composite
 def genParameters(draw):
@@ -289,10 +345,9 @@ def genParameters(draw):
         name = draw(names.filter(lambda x: x not in paramternamelist))
         paramternamelist.append(name)
         paramterlist.append((name, type, False))
-        if x == amount - 1:
-            s += name + " :" + type
-        else:
-            s += name + " :" + type + ", "
+        s += name + " :" + type
+        if x != amount - 1:
+            s += ", "
     return paramterlist, s
 
 
@@ -301,13 +356,20 @@ def projectsv2(draw):
     fuel = draw(fuelGen)
     functions = []
     variables = []
-    properties = {"fuel": fuel}
-    gen, variables, functions = genCode(draw, variables, functions, properties)
+    globalfunctions = []
+    properties = {"fuel": fuel, "depth": 1}
+    gen, variables, functions, globalfunctions = genCode(draw, variables, functions, globalfunctions, properties)
+    functioncode = ""
+    for f in globalfunctions:
+        functioncode += f[3]
+
     code = """fun main(args: Array<String>) {
 input
 }
+externalsmegaawesomefunctions
     """
-    return code.replace("input", gen)
+
+    return code.replace("input", gen).replace("externalsmegaawesomefunctions", functioncode)
 
 
 def nativeRemover(inputString):
@@ -359,6 +421,5 @@ println("{input}")
     output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
     output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
 
-    import os
     assert output1[1] == input + os.linesep
     assert output2[1] == input + os.linesep
