@@ -82,13 +82,17 @@ def genLoop(draw, variables, functions, properties):
         localFuncs = funcs
         localProps["fuel"] -= 1
 
-    return "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables, functions
+    return "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}\n"), variables, functions
 
 
 @composite
 def genExp(draw, variables, functions, properties):
     return draw(one_of(
-        genVariable(variables=variables, functions=functions, properties=properties),
+        genVariable(variables=variables, functions=functions,  properties=properties),
+        genVariable(variables=variables, functions=functions,  properties=properties),
+        genVariable(variables=variables, functions=functions,  properties=properties),
+        genVariableChange(variables=variables, functions=functions),
+        genVariableChange(variables=variables, functions=functions),
         genVariableChange(variables=variables, functions=functions),
         genFunction(variables=variables, functions=functions, properties=properties),
         genLoop(variables, functions, properties)
@@ -156,7 +160,11 @@ def buildValue(draw, variables, type):
         operator = "+"
     else:
         return draw(genValue(variables, type))
+
+    #if type in [list, tuple]:
     return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, type))
+    #else:
+    #    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, COMPATIBLE_TYPES[type]))
 
 
 @composite
@@ -166,17 +174,23 @@ def buildValueParenthesis(draw, variables, type):
 
 @composite
 def buildPrimitive(draw, type):
-    if type == "Long":
-        return draw(long)
+    if type not in [tuple, list]:
+        type = [type]
+    potentialStrategies = []
 
-    if type == "Int":
-        return draw(integer)
+    if "Long" in type:
+        potentialStrategies.append(long)
 
-    if type == "Double":
-        return draw(just(str(draw(double)) + "d"))
+    if "Int" in type:
+        potentialStrategies.append(integer)
 
-    if type == "String":
-        return draw(just("\"" + draw(names) + "\""))
+    if "Double" in type:
+        potentialStrategies.append(double)
+
+    if "String" in type:
+        potentialStrategies.append(just("\"" + draw(names) + "\""))
+
+    return draw(one_of(potentialStrategies))
 
 
 @composite
@@ -311,12 +325,14 @@ def isEqual(output1, output2):
     if str.__contains__(str(output1), "OutOfMemory") or str.__contains__(str(output2), "OutOfMemory"):
         return True
 
+    if str.__contains__(str(output1), "cannot open output file") or str.__contains__(str(output2), "cannot open output file"):
+        return True
+
     if str.__contains__(str(output1), "Division by zero") or str.__contains__(str(output2), "Division by zero"):
         return True
 
-    if nativeRemover(str(output1)) == nativeRemover(str(output2)):
-        return True
-    return False
+    assert nativeRemover(str(output1)) == nativeRemover(str(output2))
+    return True
 
 
 def TimestampMillisec64():
