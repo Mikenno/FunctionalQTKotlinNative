@@ -91,9 +91,9 @@ def genExp(draw, variables, functions, properties):
         genVariable(variables=variables, functions=functions,  properties=properties),
         genVariable(variables=variables, functions=functions,  properties=properties),
         genVariable(variables=variables, functions=functions,  properties=properties),
-        genVariableChange(variables=variables, functions=functions),
-        genVariableChange(variables=variables, functions=functions),
-        genVariableChange(variables=variables, functions=functions),
+        genVariableChange(variables=variables, functions=functions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, properties=properties),
         genFunction(variables=variables, functions=functions, properties=properties),
         genLoop(variables, functions, properties)
     ))
@@ -135,41 +135,41 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
     return draw(sampled_from(potentials))
 
 @composite
-def genArrayEntry(draw, varibles, string, fuel):
-    string += draw(one_of(chooseVariable(varibles), buildPrimitive(["Long", "Int", "Double","String"])))
+def genArrayEntry(draw, variables, string, fuel):
+    string += str(draw(genValue(["Long", "Int", "Double", "String"])))
     fuel-= 1
     if(fuel >0):
-        genArrayEntry(varibles,string,fuel)
+        string += ","
+        genArrayEntry(variables,string,fuel)
     else:
         return string
 
 
 
 @composite
-def buildArray(draw, varibles, properties):
+def buildArray(draw, variables, properties):
     localprop = properties.copy()
-    value = genArrayEntry(varibles, "", localprop["fuel"])
-
-    return value
+    value = draw(genArrayEntry(variables, "", localprop["fuel"]))
+    return "arrayOf(" + str(value) + ")"
 
 @composite
-def buildValue(draw, variables, type):
+def buildValue(draw, variables, type, properties):
     if type in NUMBER_TYPES:
         operator = draw(variableOperators)
     elif type == "String":
         operator = "+"
     else:
-        return draw(genValue(variables, type))
+        return draw(genValue(variables, type, properties))
 
     #if type in [list, tuple]:
-    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, type))
+    return draw(genValue(variables, type, properties)) + " " + operator + " " + draw(genValue(variables, type, properties))
     #else:
     #    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, COMPATIBLE_TYPES[type]))
 
 
 @composite
-def buildValueParenthesis(draw, variables, type):
-    return "(" + draw(buildValue(variables, type)) + ")"
+def buildValueParenthesis(draw, variables, type, properties):
+    return "(" + draw(buildValue(variables, type, properties)) + ")"
 
 
 @composite
@@ -196,24 +196,24 @@ def buildPrimitive(draw, type):
 @composite
 def genValue(draw, variables, type, properties):
     if(type == ARRAY_STR_ID):
-        return buildArray(variables, properties)
+        return str(draw(buildArray(variables, properties)))
     else:
         return str(draw(one_of(
             buildPrimitive(type),
-            buildValue(variables, type),
-            buildValueParenthesis(variables, type),
+            buildValue(variables, type, properties),
+            buildValueParenthesis(variables, type, properties),
             chooseVariableName(variables, type, writeableRequired=False)
         )))
 
 @composite
 def genType(draw):
-    return draw(sampled_from(NUMBER_TYPES + ["String"] + [ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAYID!
+    return draw(sampled_from(NUMBER_TYPES + ["String"] + [ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAY_STR_ID!
 
 
 @composite
-def genVariableChange(draw, variables, functions):
+def genVariableChange(draw, variables, functions, properties):
     if len(variables) == 0:
-        return draw(genVariable(variables, functions))
+        return draw(genVariable(variables, functions, properties))
 
     variable = draw(chooseVariable(variables))
     variableName = variable[0]
@@ -226,7 +226,7 @@ def genVariableChange(draw, variables, functions):
     else:
         operator = "="
     return (variableName + operator + str(
-        draw(genValue(variables, type))) + ";\n"), variables, functions
+        draw(genValue(variables, type, properties))) + ";\n"), variables, functions
 
 
 @composite
@@ -241,7 +241,10 @@ def genVariable(draw, variables, functions, properties, type=None):
     assume(name not in variableNames)
 
     variables.append((name, type, True))
-    return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
+    if type == ARRAY_STR_ID:
+        return ('var ' + name +' = ' + str(value) + ';\n'), variables, functions
+    else:
+        return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
 
 
 @composite
