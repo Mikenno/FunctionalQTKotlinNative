@@ -83,7 +83,7 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
         localProps["fuel"] -= 1
 
     indentation = properties["depth"] * "    "
-    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}"), variables, functions, globalfunctions
+    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}\n"), variables, functions, globalfunctions
 
 @composite
 def genCallFunction(draw, variables, functions, globalfunctions):
