@@ -56,12 +56,11 @@ def genCode(draw, variables, functions, properties):
 @composite
 def genLoop(draw, variables, functions, properties):
     startValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
-    varName = draw(names)
 
     variableNames = []
-    for vars in variables:
-        variableNames.append(vars[0])
-    assume(varName not in variableNames)
+    for varName in variables:
+        variableNames.append(varName[0])
+    varName = draw(names.filter(lambda x: x not in variableNames))
     endValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
 
     localProps = properties.copy()
@@ -213,11 +212,10 @@ def genVariable(draw, variables, functions, type=None):
     if type == None:
         type = draw(genType())
     value = draw(genValue(variables, type))
-    name = draw(names)
     variableNames = []
     for varName in variables:
         variableNames.append(varName[0])
-    assume(name not in variableNames)
+    name = draw(names.filter(lambda x: x not in variableNames))
 
     variables.append((name, type, True))
     return ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions
@@ -225,11 +223,11 @@ def genVariable(draw, variables, functions, type=None):
 
 @composite
 def genFunction(draw, variables, functions, properties):
-    name = draw(names)
     functionNames = []
-    for varName in functions:
-        functionNames.append(varName[0])
-    assume(name not in functionNames)
+    variableNames = []
+    for varName in variables:
+        variableNames.append(varName[0])
+    name = draw(names.filter(lambda x: x not in variableNames))
     type = draw(genType())
     parameters, parametercode = draw(genParameters())
     code = """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
@@ -255,9 +253,8 @@ def genParameters(draw):
     paramterlist = []
     paramternamelist = []
     for x in range(amount):
-        name = draw(names)
         type = draw(genType())
-        assume(name not in paramternamelist)
+        name = draw(names.filter(lambda x: x not in paramternamelist))
         paramternamelist.append(name)
         paramterlist.append((name, type, False))
         if x == amount - 1:
