@@ -103,7 +103,9 @@ stringAssignmentOperators = sampled_from(["=", "+="])
 
 @composite
 def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
-    assume(len(variables) != 0)
+    if len(variables) == 0:
+        #assume(varType != None)
+        return draw(buildPrimitive(varType))
     potentials = []
     for var in variables:
         if type(varType) in [list, tuple]:
@@ -113,6 +115,8 @@ def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
         else:
             if (var[1] == varType or varType is None) and ((var[2] and writeableRequired) or not writeableRequired):
                 potentials.append(var[0])
+    if potentials == []:
+        return draw(buildPrimitive(varType))
     return draw(sampled_from(potentials))
 
 
@@ -133,19 +137,19 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
 
 
 @composite
-def buildValue(draw, variables, type):
-    if type not in [tuple, list]:
-        type = [type]
+def buildValue(draw, variables, varType):
+    if type(varType) not in [tuple, list]:
+        varType = [varType]
 
-    if any(x in type for x in NUMBER_TYPES):
+    if any(x in varType for x in NUMBER_TYPES):
         operator = draw(variableOperators)
-    elif "String" in type:
+    elif "String" in varType:
         operator = "+"
     else:
-        return draw(genValue(variables, type))
+        return draw(genValue(variables, varType))
 
     #if type in [list, tuple]:
-    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, type))
+    return draw(genValue(variables, varType)) + " " + operator + " " + draw(genValue(variables, varType))
     #else:
     #    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, COMPATIBLE_TYPES[type]))
 
@@ -156,21 +160,21 @@ def buildValueParenthesis(draw, variables, type):
 
 
 @composite
-def buildPrimitive(draw, type):
-    if type not in [tuple, list]:
-        type = [type]
+def buildPrimitive(draw, varType):
+    if type(varType) not in [tuple, list]:
+        varType = [varType]
     potentialStrategies = []
 
-    if "Long" in type:
+    if "Long" in varType:
         potentialStrategies.append(long)
 
-    if "Int" in type:
+    if "Int" in varType:
         potentialStrategies.append(integer)
 
-    if "Double" in type:
+    if "Double" in varType:
         potentialStrategies.append(double)
 
-    if "String" in type:
+    if "String" in varType:
         potentialStrategies.append(just("\"" + draw(names) + "\""))
 
     return draw(one_of(potentialStrategies))
