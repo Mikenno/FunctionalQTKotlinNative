@@ -49,7 +49,8 @@ def projects(draw):
 def genCode(draw, variables, functions, globalfunctions, properties):
     string_code = ""
     while properties["fuel"] > 0:
-        newCode, newVariableList, functions, globalfunctions = draw(genExp(variables, functions, globalfunctions, properties))
+        newCode, newVariableList, functions, globalfunctions = draw(
+            genExp(variables, functions, globalfunctions, properties))
         variables = newVariableList
         string_code += newCode
         properties["fuel"] -= 1
@@ -85,7 +86,9 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
         localProps["fuel"] -= 1
 
     indentation = properties["depth"] * "    "
-    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}\n"), variables, functions, globalfunctions
+    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue,
+                                                    "{\n" + finalCode + "\n" + indentation + "}\n"), variables, functions, globalfunctions
+
 
 @composite
 def genCallFunction(draw, variables, functions, globalfunctions, properties, type=None):
@@ -93,7 +96,7 @@ def genCallFunction(draw, variables, functions, globalfunctions, properties, typ
     functionlist = functions.copy()
     for x in globalfunctions:
         functionlist.append((x[0], x[1], x[2]))
-    #functionlist.extend([(f[0], f[1], f[2]) for f in globalfunctions])
+    # functionlist.extend([(f[0], f[1], f[2]) for f in globalfunctions])
 
     candidates = []
     if type != None:
@@ -119,31 +122,25 @@ def genCallFunction(draw, variables, functions, globalfunctions, properties, typ
 
 @composite
 def genExp(draw, variables, functions, globalfunctions, properties):
+    expressionGens = [
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions,
+                          properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions,
+                          properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions,
+                          properties=properties),
+        genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions,
+                    properties=properties),
+        genLoop(variables, functions, globalfunctions=globalfunctions, properties=properties)]
+
     if len(functions) != 0 or len(globalfunctions) != 0:
-        return draw(one_of(
-            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genLoop(variables, functions, globalfunctions=globalfunctions, properties=properties),
-            genCallFunction(variables, functions, globalfunctions, properties=properties),
-            genCallFunction(variables, functions, globalfunctions, properties=properties),
-            genCallFunction(variables, functions, globalfunctions, properties=properties)
-        ))
-    else:
-        return draw(one_of(
-        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
-        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
-        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
-        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-        genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-        genLoop(variables, functions,globalfunctions, properties)
-    ))
+        expressionGens.append(genCallFunction(variables, functions, globalfunctions, properties=properties))
+        expressionGens.append(genCallFunction(variables, functions, globalfunctions, properties=properties))
+
+    return draw(one_of(expressionGens))
 
 
 variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*="])  # Division (/ and %) is temporarily excluded
@@ -193,11 +190,12 @@ def buildArray(draw, variables, properties):
     startFuel = localprop["fuel"]
     for fuel in range(localprop["fuel"]):
         stringCode += str(draw(genValue(variables, "String", properties)))
-        if(fuel != startFuel-1):
+        if (fuel != startFuel - 1):
             stringCode += ", "
         localprop["fuel"] -= 1
 
     return "arrayOf(" + str(stringCode) + ")"
+
 
 @composite
 def buildValue(draw, variables, varType, properties):
@@ -211,9 +209,10 @@ def buildValue(draw, variables, varType, properties):
     else:
         return draw(genValue(variables, varType, properties))
 
-    #if type in [list, tuple]:
-    return draw(genValue(variables, varType, properties)) + " " + operator + " " + draw(genValue(variables, varType, properties))
-    #else:
+    # if type in [list, tuple]:
+    return draw(genValue(variables, varType, properties)) + " " + operator + " " + draw(
+        genValue(variables, varType, properties))
+    # else:
     #    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, COMPATIBLE_TYPES[type]))
 
 
@@ -248,7 +247,7 @@ def buildPrimitive(draw, varType):
 
 @composite
 def genValue(draw, variables, type, properties):
-    if(type == ARRAY_STR_ID):
+    if (type == ARRAY_STR_ID):
         init = str(draw(buildArray(variables, properties)))
         return init
     else:
@@ -259,9 +258,10 @@ def genValue(draw, variables, type, properties):
             chooseVariableName(variables, type, writeableRequired=False)
         )))
 
+
 @composite
 def genType(draw):
-    return draw(sampled_from(NUMBER_TYPES + ["String", ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAY_STR_ID!
+    return draw(sampled_from(NUMBER_TYPES + ["String", ARRAY_STR_ID]))  # ONE DOES NOT SIMPLY ADD ARRAY_STR_ID!
 
 
 @composite
@@ -296,8 +296,9 @@ def genVariable(draw, variables, functions, properties, globalfunctions, type=No
     name = draw(names.filter(lambda x: x not in variableNames))
 
     variables.append((name, type, True))
-    indentation = properties["depth"]* "    "
-    return indentation + ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions, globalfunctions
+    indentation = properties["depth"] * "    "
+    return indentation + (
+            'var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions, globalfunctions
 
 
 @composite
@@ -336,24 +337,32 @@ output
     functioncode = code.replace("input", gen).replace("output", returncode)
     return functioncode, name, type, variables, parameterlisttype, functions, globalfunctions
 
+
 @composite
 def genInLineFunction(draw, variables, functions, globalfunctions, properties):
-    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(genF(variables, functions, globalfunctions, properties))
+    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(
+        genF(variables, functions, globalfunctions, properties))
     functions.append((functionname, funtiontype, parameterlisttype))
     return functioncode, variables, inlinefunction, globalfunctions
 
+
 @composite
 def genOutSideFunction(draw, variables, functions, globalfunctions, properties):
-    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(genF(variables, [], globalfunctions, properties))
+    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(
+        genF(variables, [], globalfunctions, properties))
     globalfunctions.append((functionname, funtiontype, parameterlisttype, functioncode))
     return "", variables, functions, globalfunctions
+
 
 @composite
 def genFunction(draw, variables, functions, globalfunctions, properties):
     return draw(one_of(
-        genInLineFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-        genOutSideFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties)
+        genInLineFunction(variables=variables, functions=functions, globalfunctions=globalfunctions,
+                          properties=properties),
+        genOutSideFunction(variables=variables, functions=functions, globalfunctions=globalfunctions,
+                           properties=properties)
     ))
+
 
 @composite
 def genParameters(draw):
@@ -416,7 +425,8 @@ def isEqual(output1, output2):
     if str.__contains__(str(output1), "OutOfMemory") or str.__contains__(str(output2), "OutOfMemory"):
         return True
 
-    if str.__contains__(str(output1), "cannot open output file") or str.__contains__(str(output2), "cannot open output file"):
+    if str.__contains__(str(output1), "cannot open output file") or str.__contains__(str(output2),
+                                                                                     "cannot open output file"):
         return True
 
     if str.__contains__(str(output1), "Division by zero") or str.__contains__(str(output2), "Division by zero"):
