@@ -86,35 +86,53 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
     return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}\n"), variables, functions, globalfunctions
 
 @composite
-def genCallFunction(draw, variables, functions, globalfunctions):
+def genCallFunction(draw, variables, functions, globalfunctions, properties, type=None):
     assume(len(functions) != 0 or len(globalfunctions) != 0)
-    #if type == None:
-    #    type = draw(genType())
     functionlist = functions.copy()
     for x in globalfunctions:
         functionlist.append((x[0], x[1], x[2]))
     #functionlist.extend([(f[0], f[1], f[2]) for f in globalfunctions])
 
-    #functionlist = functions + globalfunctions
-    #candidates = []
-    #for cand in functionlist:
-    #    if cand[1] == type:
-    #        candidates.append(cand)
-    # len(candidates) == o :(
-    candidates = functionlist.copy()
-    assume(len(candidates) != 0)
+    candidates = []
+    if type != None:
+        for cand in functionlist:
+            if cand[1] == type:
+                candidates.append(cand)
+    else:
+        candidates = functionlist.copy()
+
+    if candidates == []:
+        return str(draw(buildPrimitive(type)))
     function = draw(sampled_from(candidates))
     functionname = function[0]
     parameterlist = function[2]
-    text = draw(names)
-    code = "var " + text + " = null"
-    #code = functionname + "(" + params + ")"
+    paramcode = ""
+    for param in parameterlist:
+        paramcode += draw(chooseVariableName(variables, param, False)) + ", "
+    paramcode = paramcode[:-2]
+
+    code = functionname + "(" + paramcode + ")" + "\n"
     return code, variables, functions, globalfunctions
 
 
 @composite
 def genExp(draw, variables, functions, globalfunctions, properties):
-    return draw(one_of(
+    if len(functions) != 0 or len(globalfunctions) != 0:
+        return draw(one_of(
+            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+            genLoop(variables, functions, globalfunctions=globalfunctions, properties=properties),
+            genCallFunction(variables, functions, globalfunctions, properties=properties),
+            genCallFunction(variables, functions, globalfunctions, properties=properties),
+            genCallFunction(variables, functions, globalfunctions, properties=properties)
+        ))
+    else:
+        return draw(one_of(
             genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
             genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
             genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
