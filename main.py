@@ -282,7 +282,18 @@ def test_compilertest(s):
     print("run " + str(milisec))
     (output1) = runner.run(s, "kotlinc-jvm", outputDirectory=name)
     (output2) = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
-    assert nativeRemover(str(output1)) == nativeRemover(str(output2))
+    assert isEqual(output1, output2)
+
+def isEqual(output1, output2):
+    if output1.contains("OutOfMemory") or output2.contains("OutOfMemory"):
+        return True
+
+    if output1.contains("Division by zero") or output2.contains("Division by zero"):
+        return True
+
+    if nativeRemover(str(output1)) == nativeRemover(str(output2)):
+        return True
+    return False
 
 
 def TimestampMillisec64():
