@@ -172,7 +172,7 @@ def buildPrimitive(draw, varType):
         potentialStrategies.append(integer)
 
     if "Double" in varType:
-        potentialStrategies.append(float(double))
+        potentialStrategies.append(just(float(draw(double))))
 
     if "String" in varType:
         potentialStrategies.append(just("\"" + draw(names) + "\""))
