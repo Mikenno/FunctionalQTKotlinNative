@@ -32,6 +32,7 @@ double = decimals(allow_infinity=False, allow_nan=False)
 functionParametersCount = integers(min_value=0, max_value=10)
 fuelGen = integers(min_value=1, max_value=200)
 
+
 @composite
 def projects(draw):
     name = draw(names)
@@ -284,11 +285,12 @@ def test_compilertest(s):
     (output2) = runner.run(s, "kotlinc-native", outputDirectory=name + "-native")
     assert isEqual(output1, output2)
 
+
 def isEqual(output1, output2):
-    if output1.contains("OutOfMemory") or output2.contains("OutOfMemory"):
+    if str.__contains__(str(output1), "OutOfMemory") or str.__contains__(str(output2), "OutOfMemory"):
         return True
 
-    if output1.contains("Division by zero") or output2.contains("Division by zero"):
+    if str.__contains__(str(output1), "Division by zero") or str.__contains__(str(output2), "Division by zero"):
         return True
 
     if nativeRemover(str(output1)) == nativeRemover(str(output2)):
