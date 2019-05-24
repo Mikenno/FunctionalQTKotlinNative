@@ -83,7 +83,7 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
         localProps["fuel"] -= 1
 
     indentation = properties["depth"] * "    "
-    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}\n"), variables, functions, globalfunctions
+    return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}"), variables, functions, globalfunctions
 
 @composite
 def genCallFunction(draw, variables, functions, globalfunctions):
@@ -281,7 +281,8 @@ def genF(draw, variables, functions, globalfunctions, properties):
     indentation = properties["depth"] * "    "
     code = indentation + """\nfun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
 input
-output""" + indentation + "}"
+output
+""" + indentation + "}"
     parameterlisttype = []
     for param in parameters:
         parameterlisttype.append(param[1])
@@ -296,6 +297,7 @@ output""" + indentation + "}"
         returncode = """return null"""
     else:
         returncode = """return """ + returnvariable
+    returncode = indentation + returncode
     functioncode = code.replace("input", gen).replace("output", returncode)
     return functioncode, name, type, variables, parameterlisttype, functions, globalfunctions
 
