@@ -33,7 +33,7 @@ negativeInteger = integers(min_value=-math.pow(2, 63), max_value=0)
 double = decimals(allow_infinity=False, allow_nan=False)
 
 functionParametersCount = integers(min_value=0, max_value=10)
-fuelGen = integers(min_value=1, max_value=200)
+fuelGen = integers(min_value=10, max_value=200)
 
 
 @composite
