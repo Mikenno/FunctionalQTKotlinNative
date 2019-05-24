@@ -24,7 +24,7 @@ COMPATIBLE_TYPES = {"String": ["String"] + NUMBER_TYPES,
                     "Int": NUMBER_TYPES,
                     "Double": NUMBER_TYPES}
 
-names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=3)
+names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=4)
 
 long = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
 integer = integers(min_value=-math.pow(2, 31), max_value=math.pow(2, 31) - 1)
