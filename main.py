@@ -32,9 +32,6 @@ double = decimals(allow_infinity=False, allow_nan=False)
 functionParametersCount = integers(min_value=0, max_value=10)
 fuelGen = integers(min_value=1, max_value=200)
 
-fuel = 0
-
-
 @composite
 def projects(draw):
     name = draw(names)
@@ -45,19 +42,18 @@ def projects(draw):
     return code.replace("World", name)
 
 
-def genCode(draw, variables, functions):
+def genCode(draw, variables, functions, properties):
     string_code = ""
-    global fuel
-    while (fuel > 0):
-        newCode, newVariableList, functions = draw(genExp(variables, functions))
+    while properties["fuel"] > 0:
+        newCode, newVariableList, functions = draw(genExp(variables, functions, properties))
         variables = newVariableList
         string_code += newCode
-        fuel -= 1
+        properties["fuel"] -= 1
     return string_code, variables, functions
 
 
 @composite
-def genLoop(draw, variables, functions):
+def genLoop(draw, variables, functions, properties):
     startValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
     varName = draw(names)
 
@@ -67,32 +63,32 @@ def genLoop(draw, variables, functions):
     assume(varName not in variableNames)
     endValue = draw(integers(max_value=math.pow(2, 8), min_value=-math.pow(2, 8)))
 
-    global fuel
-    newFuel = draw(integers(min_value=1, max_value=min([20, fuel])))
-    fuel -= newFuel
+    localProps = properties.copy()
+    localProps["fuel"] = draw(integers(min_value=1, max_value=min([20, properties["fuel"]])))
+    properties["fuel"] -= localProps["fuel"]
     finalCode = ""
 
     localVars = variables.copy()
     localVars += [(varName, "Int", False)]
     localFuncs = functions.copy()
 
-    while newFuel > 0:
-        code, vars, funcs = genCode(draw, localVars, localFuncs)
+    while localProps["fuel"] > 0:
+        code, vars, funcs = genCode(draw, localVars, localFuncs, localProps)
         finalCode += code
         localVars = vars
         localFuncs = funcs
-        newFuel -= 1
+        localProps["fuel"] -= 1
 
     return "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n}"), variables, functions
 
 
 @composite
-def genExp(draw, variables, functions):
+def genExp(draw, variables, functions, properties):
     return draw(one_of(
         genVariable(variables=variables, functions=functions),
         genVariableChange(variables=variables, functions=functions),
-        genFunction(variables=variables, functions=functions),
-        genLoop(variables, functions)
+        genFunction(variables=variables, functions=functions, properties=properties),
+        genLoop(variables, functions, properties)
     ))
 
 
@@ -213,7 +209,7 @@ def genVariable(draw, variables, functions, type=None):
 
 
 @composite
-def genFunction(draw, variables, functions):
+def genFunction(draw, variables, functions, properties):
     name = draw(names)
     functionNames = []
     for varName in functions:
@@ -226,10 +222,10 @@ input
 output
 }"""
 
-    gen, parameters, extraFuncs = genCode(draw, parameters, functions)
+    gen, parameters, extraFuncs = genCode(draw, parameters, functions, properties)
     parameters += variables.copy()
     returnvariable = draw(chooseVariableName(parameters, type))
-    if (returnvariable is None):
+    if returnvariable is None:
         returncode = """return null"""
     else:
         returncode = """return """ + returnvariable
@@ -258,11 +254,11 @@ def genParameters(draw):
 
 @composite
 def projectsv2(draw):
-    global fuel
     fuel = draw(fuelGen)
     functions = []
     variables = []
-    gen, variables, functions = genCode(draw, variables, functions)
+    properties = {"fuel": fuel}
+    gen, variables, functions = genCode(draw, variables, functions, properties)
     code = """fun main(args: Array<String>) {
 input
 }
