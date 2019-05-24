@@ -88,7 +88,7 @@ def genLoop(draw, variables, functions, properties):
 @composite
 def genExp(draw, variables, functions, properties):
     return draw(one_of(
-        genVariable(variables=variables, functions=functions),
+        genVariable(variables=variables, functions=functions, properties=properties),
         genVariableChange(variables=variables, functions=functions),
         genFunction(variables=variables, functions=functions, properties=properties),
         genLoop(variables, functions, properties)
@@ -132,7 +132,8 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
 
 @composite
 def genArrayEntry(draw, varibles, string, fuel):
-    string += draw(one_of(chooseVariable(varibles), buildPrimitive(draw(one_of("Long", "Int", "Double","String")))))
+    string += draw(one_of(chooseVariable(varibles), buildPrimitive(["Long", "Int", "Double","String"])))
+    fuel-= 1
     if(fuel >0):
         genArrayEntry(varibles,string,fuel)
     else:
@@ -141,8 +142,9 @@ def genArrayEntry(draw, varibles, string, fuel):
 
 
 @composite
-def buildArray(draw, varibles):
-    value = genArrayEntry(varibles, "", fuel) #fuelisneeded
+def buildArray(draw, varibles, properties):
+    localprop = properties.copy()
+    value = genArrayEntry(varibles, "", localprop["fuel"])
 
     return value
 
@@ -178,9 +180,9 @@ def buildPrimitive(draw, type):
 
 
 @composite
-def genValue(draw, variables, type):
+def genValue(draw, variables, type, properties):
     if(type == ARRAY_STR_ID):
-        return buildArray(variables)
+        return buildArray(variables, properties)
     else:
         return str(draw(one_of(
             buildPrimitive(type),
@@ -214,10 +216,10 @@ def genVariableChange(draw, variables, functions):
 
 
 @composite
-def genVariable(draw, variables, functions, type=None):
+def genVariable(draw, variables, functions, properties, type=None):
     if type == None:
         type = draw(genType())
-    value = draw(genValue(variables, type))
+    value = draw(genValue(variables, type, properties))
     name = draw(names)
     variableNames = []
     for varName in variables:
