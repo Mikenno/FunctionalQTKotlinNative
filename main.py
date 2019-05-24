@@ -279,7 +279,7 @@ def genF(draw, variables, functions, globalfunctions, properties):
 
     localProps["depth"] += 1
     indentation = properties["depth"] * "    "
-    code = indentation + """\nfun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
+    code = indentation + """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
 input
 output
 """ + indentation + "}\n"
