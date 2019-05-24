@@ -134,9 +134,12 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
 
 @composite
 def buildValue(draw, variables, type):
-    if type in NUMBER_TYPES:
+    if type not in [tuple, list]:
+        type = [type]
+
+    if any(x in type for x in NUMBER_TYPES):
         operator = draw(variableOperators)
-    elif type == "String":
+    elif "String" in type:
         operator = "+"
     else:
         return draw(genValue(variables, type))
