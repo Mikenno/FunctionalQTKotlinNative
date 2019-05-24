@@ -282,7 +282,7 @@ def genF(draw, variables, functions, globalfunctions, properties):
     code = indentation + """\nfun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
 input
 output
-""" + indentation + "}"
+""" + indentation + "}\n"
     parameterlisttype = []
     for param in parameters:
         parameterlisttype.append(param[1])
