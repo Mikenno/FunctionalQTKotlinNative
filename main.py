@@ -154,7 +154,8 @@ def buildPrimitive(draw, type):
         return draw(integer)
 
     if type == "Double":
-        return draw(just(str(draw(double)) + "d"))
+        val = draw(double)
+        return draw(just(str(val)))
 
     if type == "String":
         return draw(just("\"" + draw(names) + "\""))
@@ -290,12 +291,14 @@ def isEqual(output1, output2):
     if str.__contains__(str(output1), "OutOfMemory") or str.__contains__(str(output2), "OutOfMemory"):
         return True
 
+    if str.__contains__(str(output1), "cannot open output file") or str.__contains__(str(output2), "cannot open output file"):
+        return True
+
     if str.__contains__(str(output1), "Division by zero") or str.__contains__(str(output2), "Division by zero"):
         return True
 
-    if nativeRemover(str(output1)) == nativeRemover(str(output2)):
-        return True
-    return False
+    assert nativeRemover(str(output1)) == nativeRemover(str(output2))
+    return True
 
 
 def TimestampMillisec64():
