@@ -222,6 +222,9 @@ def buildPrimitive(draw, varType):
     if "String" in varType:
         potentialStrategies.append(just("\"" + draw(names) + "\""))
 
+    if ARRAY_STR_ID in varType:
+        potentialStrategies.append(just("arrayOf()"))
+
     return draw(one_of(potentialStrategies))
 
 
