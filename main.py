@@ -16,6 +16,8 @@ from hypothesis.strategies import text, characters, composite, integers, decimal
 
 import runner
 
+ARRAY_STR_ID = "Array<String>"
+
 NUMBER_TYPES = ["Long", "Int", "Double"]
 COMPATIBLE_TYPES = {"String": ["String"] + NUMBER_TYPES,
                     "Long": NUMBER_TYPES,
@@ -133,19 +135,15 @@ def genExp(draw, variables, functions, globalfunctions, properties):
         ))
     else:
         return draw(one_of(
-            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
-            genLoop(variables, functions, globalfunctions=globalfunctions, properties=properties)
-        ))
-
-
-
-
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
+        genVariable(variables=variables, functions=functions, globalfunctions=globalfunctions,  properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genVariableChange(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genFunction(variables=variables, functions=functions, globalfunctions=globalfunctions, properties=properties),
+        genLoop(variables, functions,globalfunctions, properties)
+    ))
 
 
 variableAssignmentOperators = sampled_from(["=", "+=", "-=", "*="])  # Division (/ and %) is temporarily excluded
@@ -156,7 +154,6 @@ stringAssignmentOperators = sampled_from(["=", "+="])
 @composite
 def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
     if len(variables) == 0:
-        #assume(varType != None)
         return str(draw(buildPrimitive(varType)))
     potentials = []
     for var in variables:
@@ -189,7 +186,21 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
 
 
 @composite
-def buildValue(draw, variables, varType):
+def buildArray(draw, variables, properties):
+    localprop = properties.copy()
+    localprop["fuel"] = draw(integers(min_value=1, max_value=20))
+    stringCode = ""
+    startFuel = localprop["fuel"]
+    for fuel in range(localprop["fuel"]):
+        stringCode += str(draw(genValue(variables, "String", properties)))
+        if(fuel != startFuel-1):
+            stringCode += ", "
+        localprop["fuel"] -= 1
+
+    return "arrayOf(" + str(stringCode) + ")"
+
+@composite
+def buildValue(draw, variables, varType, properties):
     if type(varType) not in [tuple, list]:
         varType = [varType]
 
@@ -198,17 +209,17 @@ def buildValue(draw, variables, varType):
     elif "String" in varType:
         operator = "+"
     else:
-        return draw(genValue(variables, varType))
+        return draw(genValue(variables, varType, properties))
 
     #if type in [list, tuple]:
-    return draw(genValue(variables, varType)) + " " + operator + " " + draw(genValue(variables, varType))
+    return draw(genValue(variables, varType, properties)) + " " + operator + " " + draw(genValue(variables, varType, properties))
     #else:
     #    return draw(genValue(variables, type)) + " " + operator + " " + draw(genValue(variables, COMPATIBLE_TYPES[type]))
 
 
 @composite
-def buildValueParenthesis(draw, variables, type):
-    return "(" + draw(buildValue(variables, type)) + ")"
+def buildValueParenthesis(draw, variables, type, properties):
+    return "(" + draw(buildValue(variables, type, properties)) + ")"
 
 
 @composite
@@ -229,26 +240,32 @@ def buildPrimitive(draw, varType):
     if "String" in varType:
         potentialStrategies.append(just("\"" + draw(names) + "\""))
 
+    if ARRAY_STR_ID in varType:
+        potentialStrategies.append(just("arrayOf()"))
+
     return draw(one_of(potentialStrategies))
 
 
 @composite
-def genValue(draw, variables, type):
-    return str(draw(one_of(
-        buildPrimitive(type),
-        buildValue(variables, type),
-        buildValueParenthesis(variables, type),
-        chooseVariableName(variables, type, writeableRequired=False)
-    )))
-
+def genValue(draw, variables, type, properties):
+    if(type == ARRAY_STR_ID):
+        init = str(draw(buildArray(variables, properties)))
+        return init
+    else:
+        return str(draw(one_of(
+            buildPrimitive(type),
+            buildValue(variables, type, properties),
+            buildValueParenthesis(variables, type, properties),
+            chooseVariableName(variables, type, writeableRequired=False)
+        )))
 
 @composite
 def genType(draw):
-    return draw(sampled_from(NUMBER_TYPES + ["String"]))
+    return draw(sampled_from(NUMBER_TYPES + ["String", ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAY_STR_ID!
 
 
 @composite
-def genVariableChange(draw, variables, functions, properties,globalfunctions):
+def genVariableChange(draw, variables, functions, properties, globalfunctions):
     if len(variables) == 0:
         return draw(genVariable(variables, functions, properties, globalfunctions=globalfunctions))
 
@@ -265,14 +282,14 @@ def genVariableChange(draw, variables, functions, properties,globalfunctions):
 
     indentation = properties["depth"] * "    "
     return indentation + (variableName + operator + str(
-        draw(genValue(variables, type))) + ";\n"), variables, functions, globalfunctions
+        draw(genValue(variables, type, properties))) + ";\n"), variables, functions, globalfunctions
 
 
 @composite
 def genVariable(draw, variables, functions, properties, globalfunctions, type=None):
     if type == None:
         type = draw(genType())
-    value = draw(genValue(variables, type))
+    value = draw(genValue(variables, type, properties))
     variableNames = []
     for varName in variables:
         variableNames.append(varName[0])
