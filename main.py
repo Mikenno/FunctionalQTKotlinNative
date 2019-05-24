@@ -82,7 +82,7 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
         globalfunctions = glob
         localProps["fuel"] -= 1
 
-    indentation = properties["depth"] * "\t"
+    indentation = properties["depth"] * "    "
     return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue, "{\n" + finalCode + "\n" + indentation + "}\n"), variables, functions, globalfunctions
 
 @composite
@@ -244,7 +244,9 @@ def genVariableChange(draw, variables, functions, properties,globalfunctions):
         operator = draw(stringAssignmentOperators)
     else:
         operator = "="
-    return (variableName + operator + str(
+
+    indentation = properties["depth"] * "    "
+    return indentation + (variableName + operator + str(
         draw(genValue(variables, type))) + ";\n"), variables, functions, globalfunctions
 
 
@@ -259,7 +261,7 @@ def genVariable(draw, variables, functions, properties, globalfunctions, type=No
     name = draw(names.filter(lambda x: x not in variableNames))
 
     variables.append((name, type, True))
-    indentation = properties["depth"]* "\t"
+    indentation = properties["depth"]* "    "
     return indentation + ('var ' + name + ': ' + type + ' = ' + str(value) + ';\n'), variables, functions, globalfunctions
 
 
@@ -276,7 +278,7 @@ def genF(draw, variables, functions, globalfunctions, properties):
     properties["fuel"] -= localProps["fuel"]
 
     localProps["depth"] += 1
-    indentation = properties["depth"] * "\t"
+    indentation = properties["depth"] * "    "
     code = indentation + """\nfun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
 input
 output""" + indentation + "}"
