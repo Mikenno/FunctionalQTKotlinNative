@@ -314,5 +314,6 @@ println("{input}")
     output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
     output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
 
-    assert output1[1] == input
-    assert output2[1] == input
+    import os
+    assert output1[1] == input + os.linesep
+    assert output2[1] == input + os.linesep
