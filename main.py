@@ -15,6 +15,8 @@ from hypothesis.strategies import text, characters, composite, integers, decimal
 
 import runner
 
+ARRAY_STR_ID = "Array"
+
 NUMBER_TYPES = ["Long", "Int", "Double"]
 COMPATIBLE_TYPES = {"String": ["String"] + NUMBER_TYPES,
                     "Long": NUMBER_TYPES,
@@ -128,6 +130,21 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
 
     return draw(sampled_from(potentials))
 
+@composite
+def genArrayEntry(draw, varibles, string, fuel):
+    string += draw(one_of(chooseVariable(varibles), buildPrimitive(draw(one_of("Long", "Int", "Double","String")))))
+    if(fuel >0):
+        genArrayEntry(varibles,string,fuel)
+    else:
+        return string
+
+
+
+@composite
+def buildArray(draw, varibles):
+    value = genArrayEntry(varibles, "", fuel) #fuelisneeded
+
+    return value
 
 @composite
 def buildValue(draw, variables, type):
@@ -162,17 +179,19 @@ def buildPrimitive(draw, type):
 
 @composite
 def genValue(draw, variables, type):
-    return str(draw(one_of(
-        buildPrimitive(type),
-        buildValue(variables, type),
-        buildValueParenthesis(variables, type),
-        chooseVariableName(variables, type, writeableRequired=False)
-    )))
-
+    if(type == ARRAY_STR_ID):
+        return buildArray(variables)
+    else:
+        return str(draw(one_of(
+            buildPrimitive(type),
+            buildValue(variables, type),
+            buildValueParenthesis(variables, type),
+            chooseVariableName(variables, type, writeableRequired=False)
+        )))
 
 @composite
 def genType(draw):
-    return draw(sampled_from(NUMBER_TYPES + ["String"]))
+    return draw(sampled_from(NUMBER_TYPES + ["String"] + [ARRAY_STR_ID])) #ONE DOES NOT SIMPLY ADD ARRAYID!
 
 
 @composite
