@@ -444,6 +444,43 @@ def test_dead_code(data):
     assert output1[1] == input
     assert output2[1] == input
 
+@given(data())
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
+          verbosity=Verbosity.debug)
+def test_dead_code_arg(data):
+    variables = [("variable1", "String", False)]
+    fuel = data.draw(fuelGen)
+    gen, _, _, globalFuncs = data.draw(genCode(variables, [], [], {"fuel": fuel, "depth":1}))
+    functioncode = ""
+    for f in globalFuncs:
+        functioncode += f[3]
+
+    input = data.draw(names)
+    code = """fun main(args: Array<String>) {
+    var variable1 = "%s"
+    check
+%s
+    print(variable1)
+}
+%s""" % (input, gen, functioncode)
+
+    checkStatement = """if (args.size > 0) {
+        var variable1 = "%s";
+        }""" % (data.draw(names.filter(lambda x: x is not input)))
+
+    name = "out/folder" + (str(TimestampMillisec64()))
+    output1 = runner.run(code.replace("check", checkStatement), "kotlinc-jvm", outputDirectory=name + "-jvm1")
+    output2 = runner.run(code.replace("check", ""), "kotlinc-jvm", outputDirectory=name + "-jvm2")
+
+    assert output1[1] == input
+    assert output2[1] == input
+
+    output1 = runner.run(code.replace("check", checkStatement), "kotlinc-native", outputDirectory=name + "-native1")
+    output2 = runner.run(code.replace("check", ""), "kotlinc-native", outputDirectory=name + "-native2")
+
+    assert output1[1] == input
+    assert output2[1] == input
+
 @given(projectsv2())
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=50,
           verbosity=Verbosity.debug)
