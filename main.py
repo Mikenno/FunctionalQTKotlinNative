@@ -447,26 +447,33 @@ def test_dead_code(data):
 @given(data())
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
           verbosity=Verbosity.debug)
-def test_dead_code_arg(data):
+def test_dead_code_args(data):
     variables = [("variable1", "String", False)]
     fuel = data.draw(fuelGen)
-    gen, _, _, globalFuncs = data.draw(genCode(variables, [], [], {"fuel": fuel, "depth":1}))
+    gen, _variables, _, globalFuncs = data.draw(genCode(variables, [], [], {"fuel": fuel, "depth":1}))
+
+    _gen, _, _, _globalFuncs = data.draw(genCode(_variables, [], [], {"fuel": math.ceil(fuel / 2), "depth": 2}))
     functioncode = ""
     for f in globalFuncs:
+        functioncode += f[3]
+    for f in _globalFuncs:
         functioncode += f[3]
 
     input = data.draw(names)
     code = """fun main(args: Array<String>) {
     var variable1 = "%s"
-    check
 %s
+    check
     print(variable1)
 }
 %s""" % (input, gen, functioncode)
 
+
+
     checkStatement = """if (args.size > 0) {
-        var variable1 = "%s";
-        }""" % (data.draw(names.filter(lambda x: x is not input)))
+        variable1 = "%s";
+%s
+}""" % (data.draw(names.filter(lambda x: x is not input)), _gen)
 
     name = "out/folder" + (str(TimestampMillisec64()))
     output1 = runner.run(code.replace("check", checkStatement), "kotlinc-jvm", outputDirectory=name + "-jvm1")
