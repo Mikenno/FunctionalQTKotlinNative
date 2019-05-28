@@ -77,13 +77,7 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
     localVars += [(varName, "Int", False)]
     localFuncs = functions.copy()
 
-    while localProps["fuel"] > 0:
-        code, vars, funcs, glob = draw(genCode(localVars, localFuncs, globalfunctions, localProps))
-        finalCode += code
-        localVars = vars
-        localFuncs = funcs
-        globalfunctions = glob
-        localProps["fuel"] -= 1
+    finalCode, vars, funcs, globalfunctions = draw(genCode(localVars, localFuncs, globalfunctions, localProps))
 
     indentation = properties["depth"] * "    "
     return indentation + "for (%s in %s..%s) %s" % (varName, startValue, endValue,
