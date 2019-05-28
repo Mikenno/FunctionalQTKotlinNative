@@ -354,8 +354,10 @@ def genInLineFunction(draw, variables, functions, globalfunctions, properties):
 
 @composite
 def genOutSideFunction(draw, variables, functions, globalfunctions, properties):
+    localProps = properties.copy()
+    localProps["depth"] = 1
     functioncode, functionname, funtiontype, _, parameterlisttype, inlinefunction, globalfunctions = draw(
-        genF([], [], globalfunctions, properties))
+        genF([], [], globalfunctions, localProps))
     globalfunctions.append((functionname, funtiontype, parameterlisttype, functioncode))
     return "", variables, functions, globalfunctions
 
