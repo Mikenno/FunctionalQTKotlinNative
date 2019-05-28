@@ -1,4 +1,5 @@
-from hypothesis._strategies import randoms, sampled_from, one_of, recursive, builds
+import pytest
+from hypothesis._strategies import randoms, sampled_from, one_of, recursive, builds, data
 
 import runner
 from datetime import datetime
@@ -33,7 +34,7 @@ negativeInteger = integers(min_value=-math.pow(2, 63), max_value=0)
 double = decimals(allow_infinity=False, allow_nan=False)
 
 functionParametersCount = integers(min_value=0, max_value=10)
-fuelGen = integers(min_value=10, max_value=200)
+fuelGen = integers(min_value=10, max_value=500)
 
 
 @composite
@@ -45,7 +46,7 @@ def projects(draw):
     """
     return code.replace("World", name)
 
-
+@composite
 def genCode(draw, variables, functions, globalfunctions, properties):
     string_code = ""
     while properties["fuel"] > 0:
@@ -78,7 +79,7 @@ def genLoop(draw, variables, functions, globalfunctions, properties):
     localFuncs = functions.copy()
 
     while localProps["fuel"] > 0:
-        code, vars, funcs, glob = genCode(draw, localVars, localFuncs, globalfunctions, localProps)
+        code, vars, funcs, glob = draw(genCode(localVars, localFuncs, globalfunctions, localProps))
         finalCode += code
         localVars = vars
         localFuncs = funcs
@@ -323,7 +324,7 @@ output
     for param in parameters:
         parameterlisttype.append(param[1])
 
-    gen, parameters, extraFuncs, globalfunctions = genCode(draw, parameters, functions, globalfunctions, localProps)
+    gen, parameters, extraFuncs, globalfunctions = draw(genCode(parameters, functions, globalfunctions, localProps))
     parameters += variables.copy()
     if len(parameters) == 0:
         returnvariable = None
@@ -382,13 +383,16 @@ def genParameters(draw):
 
 
 @composite
-def projectsv2(draw):
-    fuel = draw(fuelGen)
-    functions = []
-    variables = []
+def projectsv2(draw, functions=None, variables=None, properties=None):
+    if properties is None:
+        fuel = draw(fuelGen)
+        properties = {"fuel": fuel, "depth": 1}
+    if variables is None:
+        variables = []
+    if functions is None:
+        functions = []
     globalfunctions = []
-    properties = {"fuel": fuel, "depth": 1}
-    gen, variables, functions, globalfunctions = genCode(draw, variables, functions, globalfunctions, properties)
+    gen, variables, functions, globalfunctions = draw(genCode(variables, functions, globalfunctions, properties))
     functioncode = ""
     for f in globalfunctions:
         functioncode += f[3]
@@ -408,9 +412,65 @@ def nativeRemover(inputString):
     inputString = inputString.replace("external", "")
     return inputString.replace("-native", "")
 
+@given(data())
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
+          verbosity=Verbosity.debug)
+@pytest.mark.xfail(raises=AssertionError)
+def test_error_on_different_output(data):
+    fuel = data.draw(fuelGen)
+    properties = {"fuel": fuel, "depth": 1}
+    gen, variables, functions, globalfunctions = data.draw(genCode([], [], [], properties))
+    functioncode = ""
+    for f in globalfunctions:
+        functioncode += f[3]
+
+    code = """fun main(args: Array<String>) {
+    input
+    }
+    externalsmegaawesomefunctions
+        """
+
+    code = code.replace("input", gen).replace("externalsmegaawesomefunctions", functioncode)
+
+    name = "out/folder" + (str(TimestampMillisec64()))
+    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
+
+    code = """fun main(args: Array<String>) {
+    println("Hello failing test")
+}
+"""
+    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
+
+    assert isEqual(output1, output2)
+
+@given(data())
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
+          verbosity=Verbosity.debug)
+def test_dead_code(data):
+    variables = [("variable1", "String", False)]
+    fuel = data.draw(fuelGen)
+    gen, _, _, globalFuncs = data.draw(genCode(variables, [], [], {"fuel": fuel, "depth":1}))
+    functioncode = ""
+    for f in globalFuncs:
+        functioncode += f[3]
+
+    input = data.draw(names)
+    code = """fun main(args: Array<String>) {
+    var variable1 = "%s"
+%s
+    print(variable1)
+}
+%s""" % (input, gen, functioncode)
+
+    name = "out/folder" + (str(TimestampMillisec64()))
+    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
+    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
+
+    assert output1[1] == input
+    assert output2[1] == input
 
 @given(projectsv2())
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=20,
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=50,
           verbosity=Verbosity.debug)
 def test_compilertest(s):
     milisec = TimestampMillisec64()
