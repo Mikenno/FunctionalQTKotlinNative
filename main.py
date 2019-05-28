@@ -108,7 +108,7 @@ def genCallFunction(draw, variables, functions, globalfunctions, properties, typ
         candidates = functionlist.copy()
 
     if candidates == []:
-        return str(draw(buildPrimitive(type)))
+        return [str(draw(buildPrimitive(type))), variables, functions, globalfunctions]
     function = draw(sampled_from(candidates))
     functionname = function[0]
     parameterlist = function[2]
@@ -241,7 +241,7 @@ def buildPrimitive(draw, varType):
         potentialStrategies.append(just("\"" + draw(names) + "\""))
 
     if ARRAY_STR_ID in varType:
-        potentialStrategies.append(just("arrayOf()"))
+        potentialStrategies.append(just("arrayOf<String>()"))
 
     return draw(one_of(potentialStrategies))
 
