@@ -25,7 +25,7 @@ COMPATIBLE_TYPES = {"String": ["String"] + NUMBER_TYPES,
                     "Int": NUMBER_TYPES,
                     "Double": NUMBER_TYPES}
 
-names = text(characters(max_codepoint=150, whitelist_categories=('Lu', 'Ll')), min_size=4)
+names = text(characters(whitelist_characters=list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_æøåÆØÅ"), whitelist_categories=()), min_size=5)
 
 long = integers(min_value=-math.pow(2, 63), max_value=(math.pow(2, 63) - 1))
 integer = integers(min_value=-math.pow(2, 31), max_value=math.pow(2, 31) - 1)
@@ -33,9 +33,8 @@ positiveInteger = integers(min_value=0, max_value=math.pow(2, 63) - 1)
 negativeInteger = integers(min_value=-math.pow(2, 63), max_value=0)
 double = decimals(allow_infinity=False, allow_nan=False)
 
-functionParametersCount = integers(min_value=0, max_value=10)
-fuelGen = integers(min_value=10, max_value=500)
-
+functionParametersCount = integers(min_value=0, max_value=5)
+fuelGen = integers(min_value=10, max_value=1000)
 
 @composite
 def projects(draw):
@@ -173,7 +172,6 @@ def chooseVariableName(draw, variables, varType=None, writeableRequired=True):
 
 @composite
 def chooseVariable(draw, variables, varType=None, writeableRequired=True):
-    assume(len(variables) != 0)
     potentials = []
     for var in variables:
         if type(varType) in [list, tuple]:
@@ -183,7 +181,8 @@ def chooseVariable(draw, variables, varType=None, writeableRequired=True):
         else:
             if (var[1] == varType or varType is None) and ((var[2] and writeableRequired) or not writeableRequired):
                 potentials.append(var)
-    assume(len(potentials) != 0)
+
+    if len(potentials) == 0: return None
     return draw(sampled_from(potentials))
 
 
@@ -276,6 +275,10 @@ def genVariableChange(draw, variables, functions, properties, globalfunctions):
         return draw(genVariable(variables, functions, properties, globalfunctions=globalfunctions))
 
     variable = draw(chooseVariable(variables))
+
+    if variable == None:
+        return draw(genVariable(variables, functions, properties, globalfunctions=globalfunctions))
+
     variableName = variable[0]
     type = variable[1]
 
@@ -421,6 +424,40 @@ def nativeRemover(inputString):
 @given(data())
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
           verbosity=Verbosity.debug)
+def test_error_on_different_output(data):
+    fuel = data.draw(fuelGen)
+    properties = {"fuel": fuel, "depth": 1}
+    gen, variables, functions, globalfunctions = data.draw(genCode([], [], [], properties))
+    functioncode = ""
+    for f in globalfunctions:
+        functioncode += f[3]
+
+    code = """fun main(args: Array<String>) {
+    input
+    }
+    externalsmegaawesomefunctions
+        """
+
+    code = code.replace("input", gen).replace("externalsmegaawesomefunctions", functioncode)
+
+    name = "out/folder" + (str(TimestampMillisec64()))
+    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
+
+    code = """fun main(args: Array<String>) {
+    println("Hello failing test")
+}
+"""
+    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
+
+    try:
+        assert isEqual(output1, output2)
+        raise RuntimeError()
+    except AssertionError:
+        pass
+
+@given(data())
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
+          verbosity=Verbosity.debug)
 def test_dead_code(data):
     variables = [("variable1", "String", False)]
     fuel = data.draw(fuelGen)
@@ -443,6 +480,7 @@ def test_dead_code(data):
 
     assert output1[1] == input
     assert output2[1] == input
+
 
 @given(data())
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
@@ -533,34 +571,3 @@ println("{input}")
 
     assert output1[1] == input + os.linesep
     assert output2[1] == input + os.linesep
-
-@given(data())
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
-          verbosity=Verbosity.debug)
-@pytest.mark.xfail()
-def test_error_on_different_output(data):
-    fuel = data.draw(fuelGen)
-    properties = {"fuel": fuel, "depth": 1}
-    gen, variables, functions, globalfunctions = data.draw(genCode([], [], [], properties))
-    functioncode = ""
-    for f in globalfunctions:
-        functioncode += f[3]
-
-    code = """fun main(args: Array<String>) {
-    input
-    }
-    externalsmegaawesomefunctions
-        """
-
-    code = code.replace("input", gen).replace("externalsmegaawesomefunctions", functioncode)
-
-    name = "out/folder" + (str(TimestampMillisec64()))
-    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
-
-    code = """fun main(args: Array<String>) {
-    println("Hello failing test")
-}
-"""
-    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
-
-    assert isEqual(output1, output2)
