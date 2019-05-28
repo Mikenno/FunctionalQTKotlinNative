@@ -314,6 +314,8 @@ def genF(draw, variables, functions, globalfunctions, properties):
     localProps["fuel"] = draw(integers(min_value=1, max_value=min([30, properties["fuel"]])))
     properties["fuel"] -= localProps["fuel"]
 
+    localFuncs = functions.copy()
+
     localProps["depth"] += 1
     indentation = properties["depth"] * "    "
     code = indentation + """fun """ + name + """(""" + parametercode + """ ) :""" + type + """? {
@@ -324,8 +326,8 @@ output
     for param in parameters:
         parameterlisttype.append(param[1])
 
-    gen, parameters, extraFuncs, globalfunctions = draw(genCode(parameters, functions, globalfunctions, localProps))
     parameters += variables.copy()
+    gen, parameters, extraFuncs, globalfunctions = draw(genCode(parameters, localFuncs, globalfunctions, localProps))
     if len(parameters) == 0:
         returnvariable = None
     else:
@@ -349,8 +351,8 @@ def genInLineFunction(draw, variables, functions, globalfunctions, properties):
 
 @composite
 def genOutSideFunction(draw, variables, functions, globalfunctions, properties):
-    functioncode, functionname, funtiontype, variables, parameterlisttype, inlinefunction, globalfunctions = draw(
-        genF(variables, [], globalfunctions, properties))
+    functioncode, functionname, funtiontype, _, parameterlisttype, inlinefunction, globalfunctions = draw(
+        genF([], [], globalfunctions, properties))
     globalfunctions.append((functionname, funtiontype, parameterlisttype, functioncode))
     return "", variables, functions, globalfunctions
 
