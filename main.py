@@ -419,7 +419,7 @@ def nativeRemover(inputString):
 @given(data())
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
           verbosity=Verbosity.debug)
-@pytest.mark.xfail(raises=AssertionError)
+@pytest.mark.xfail()
 def test_error_on_different_output(data):
     fuel = data.draw(fuelGen)
     properties = {"fuel": fuel, "depth": 1}
