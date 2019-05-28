@@ -16,6 +16,9 @@ for path, dirs, files in os.walk("out"):
 print(lengths)
 print("Count: " + str(len(lengths)))
 print("Average: " + str(sum(lengths)/len(lengths)))
+print("Min/Max: " + str(min(lengths)) + "/" + str(max(lengths)))
 
 plt.hist(lengths, 50, density=True, facecolor='g', alpha=0.75)
+plt.xlabel("Lines of code")
+plt.ylabel("Occurrence count (%)")
 plt.show()

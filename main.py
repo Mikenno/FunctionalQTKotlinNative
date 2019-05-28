@@ -421,37 +421,6 @@ def nativeRemover(inputString):
 @given(data())
 @settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
           verbosity=Verbosity.debug)
-@pytest.mark.xfail()
-def test_error_on_different_output(data):
-    fuel = data.draw(fuelGen)
-    properties = {"fuel": fuel, "depth": 1}
-    gen, variables, functions, globalfunctions = data.draw(genCode([], [], [], properties))
-    functioncode = ""
-    for f in globalfunctions:
-        functioncode += f[3]
-
-    code = """fun main(args: Array<String>) {
-    input
-    }
-    externalsmegaawesomefunctions
-        """
-
-    code = code.replace("input", gen).replace("externalsmegaawesomefunctions", functioncode)
-
-    name = "out/folder" + (str(TimestampMillisec64()))
-    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
-
-    code = """fun main(args: Array<String>) {
-    println("Hello failing test")
-}
-"""
-    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
-
-    assert isEqual(output1, output2)
-
-@given(data())
-@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
-          verbosity=Verbosity.debug)
 def test_dead_code(data):
     variables = [("variable1", "String", False)]
     fuel = data.draw(fuelGen)
@@ -520,3 +489,34 @@ println("{input}")
 
     assert output1[1] == input + os.linesep
     assert output2[1] == input + os.linesep
+
+@given(data())
+@settings(deadline=None, suppress_health_check=HealthCheck.all(), max_examples=5,
+          verbosity=Verbosity.debug)
+@pytest.mark.xfail()
+def test_error_on_different_output(data):
+    fuel = data.draw(fuelGen)
+    properties = {"fuel": fuel, "depth": 1}
+    gen, variables, functions, globalfunctions = data.draw(genCode([], [], [], properties))
+    functioncode = ""
+    for f in globalfunctions:
+        functioncode += f[3]
+
+    code = """fun main(args: Array<String>) {
+    input
+    }
+    externalsmegaawesomefunctions
+        """
+
+    code = code.replace("input", gen).replace("externalsmegaawesomefunctions", functioncode)
+
+    name = "out/folder" + (str(TimestampMillisec64()))
+    output1 = runner.run(code, "kotlinc-jvm", outputDirectory=name)
+
+    code = """fun main(args: Array<String>) {
+    println("Hello failing test")
+}
+"""
+    output2 = runner.run(code, "kotlinc-native", outputDirectory=name + "-native")
+
+    assert isEqual(output1, output2)
